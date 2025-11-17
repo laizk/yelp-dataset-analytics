@@ -1,0 +1,159 @@
+services:
+  # kafka:
+  #   image: apache/kafka:latest
+  #   hostname: broker
+  #   container_name: kafka
+  #   ports:
+  #     - "9092:9092"
+  #   environment:
+  #     KAFKA_BROKER_ID: 1
+  #     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+  #     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
+  #     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  #     KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+  #     KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+  #     KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+  #     KAFKA_PROCESS_ROLES: broker,controller
+  #     KAFKA_NODE_ID: 1
+  #     KAFKA_CONTROLLER_QUORUM_VOTERS: 1@broker:29093
+  #     KAFKA_LISTENERS: PLAINTEXT://broker:29092,CONTROLLER://broker:29093,PLAINTEXT_HOST://0.0.0.0:9092
+  #     KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+  #     KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+  #     KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+  #     CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+  #   networks:
+  #     - common
+
+
+  # # Create kafka topics on startup
+  # kafka-init:
+  #   image: apache/kafka:latest
+  #   depends_on:
+  #     - kafka
+  #   restart: on-failure
+  #   networks:
+  #     - common
+  #   entrypoint: ['/bin/sh', '-c']
+  #   command: |
+  #     "
+  #     echo 'Waiting for Kafka to be ready...'
+  #     sleep 10
+  #     /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server broker:29092 --partitions 3 --replication-factor 1 --topic risk_trades
+  #     /opt/kafka/bin/kafka-topics.sh --list --bootstrap-server broker:29092
+  #     echo 'Topics created successfully'
+  #     "
+
+  # minio:
+  #   image: quay.io/minio/minio:latest
+  #   container_name: minio
+  #   environment:
+  #     MINIO_ROOT_USER: ${DATA_LAKE_ACCESS_KEY_ID}
+  #     MINIO_ROOT_PASSWORD: ${DATA_LAKE_SECRET_ACCESS_KEY}
+  #   command: server /data --console-address ":9001"
+  #   ports:
+  #     - "9000:9000"
+  #     - "9001:9001"
+  #   networks:
+  #     - common
+  #   volumes:
+  #     - ./minio/data:/data
+
+  # createbuckets:
+  #   image: quay.io/minio/mc:latest
+  #   depends_on:
+  #     - minio
+  #   restart: on-failure
+  #   networks:
+  #     - common
+  #   entrypoint: >
+  #     /bin/sh -c "
+  #     sleep 5;
+  #     /usr/bin/mc alias set dockerminio http://minio:9000 ${DATA_LAKE_ACCESS_KEY_ID} ${DATA_LAKE_SECRET_ACCESS_KEY};
+  #     /usr/bin/mc mb dockerminio/staging;
+  #     /usr/bin/mc mb dockerminio/error;
+  #     exit 0;
+  #     "
+
+  spark:
+    build: ./apps/batch/spark
+    container_name: batch-spark
+    # depends_on:
+    #   - kafka
+    #   - minio
+    #   - createbuckets
+    environment:
+      - DATA_LAKE_ENDPOINT=${DATA_LAKE_ENDPOINT}
+      - DATA_LAKE_ACCESS_KEY_ID=${DATA_LAKE_ACCESS_KEY_ID}
+      - DATA_LAKE_SECRET_ACCESS_KEY=${DATA_LAKE_SECRET_ACCESS_KEY}
+      - DATA_LAKE_REGION=us-east-1
+      - KAFKA_BOOTSTRAP=broker:29092
+    #   # MinIO config
+    #   - SPARK_CONF_spark.hadoop.fs.s3a.endpoint=${DATA_LAKE_ENDPOINT}
+    #   - SPARK_CONF_spark.hadoop.fs.s3a.access.key=${DATA_LAKE_ACCESS_KEY_ID}
+    #   - SPARK_CONF_spark.hadoop.fs.s3a.secret.key=${DATA_LAKE_SECRET_ACCESS_KEY}
+    #   - SPARK_CONF_spark.hadoop.fs.s3a.path.style.access=true
+    #   - SPARK_CONF_spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem
+    #   # Delta lake capability
+    #   - SPARK_CONF_spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension
+    #   - SPARK_CONF_spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog
+    #   # Packages to install
+    #   - |
+    #       SPARK_CONF_spark.jars=/opt/spark/jars/hadoop-aws-3.4.2.jar,\
+    #       /opt/spark/jars/aws-java-sdk-bundle-1.12.793.jar,\
+    #       /opt/spark/jars/delta-spark_2.13-4.0.0.jar,\
+    #       /opt/spark/jars/delta-storage-4.0.0.jar              
+    volumes:
+      - ./apps/batch/spark:/app
+      - ./apps/batch/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf      
+    networks:
+      - common
+    ports:
+      - "4040:4040"
+      - "8080:8080"
+      - "8000:8000"
+    command: ["/bin/bash"]
+    stdin_open: true # Equivalent to -i
+    tty: true        # Equivalent to -t
+    
+
+  # jupyter:
+  #   build: ./jupyter
+  #   container_name: spark-jupyter
+  #   ports:
+  #     - "8888:8888"
+  #   volumes:
+  #     - ./jupyter/workspace:/workspace
+  #   networks:
+  #     - common
+  #   depends_on:
+  #     - minio
+  #     - kafka
+
+  # prometheus:
+  #   image: prom/prometheus
+  #   volumes:
+  #     - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+  #   container_name: prometheus
+  #   restart: unless-stopped
+  #   ports:
+  #     - '9090:9090'
+  #   networks:
+  #     - common
+  #   depends_on:
+  #     - spark
+
+  # grafana:
+  #   image: grafana/grafana-enterprise
+  #   container_name: grafana
+  #   restart: unless-stopped
+  #   ports:
+  #     - '3000:3000'    
+  #   environment:
+  #     GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER}
+  #     GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
+  #   networks:
+  #     - common  
+
+networks:
+  common:
+    driver: bridge
