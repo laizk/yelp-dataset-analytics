@@ -116,15 +116,22 @@ services:
     tty: true        # Equivalent to -t
     
 
-  # jupyter:
-  #   build: ./jupyter
-  #   container_name: spark-jupyter
-  #   ports:
-  #     - "8888:8888"
-  #   volumes:
-  #     - ./jupyter/workspace:/workspace
-  #   networks:
-  #     - common
+  jupyter:
+    build: ./apps/analytics/jupyter
+    container_name: analytics-jupyter
+    environment:
+      - DATA_LAKE_ENDPOINT=${DATA_LAKE_ENDPOINT}
+      - DATA_LAKE_ACCESS_KEY_ID=${DATA_LAKE_ACCESS_KEY_ID}
+      - DATA_LAKE_SECRET_ACCESS_KEY=${DATA_LAKE_SECRET_ACCESS_KEY}
+      - DATA_LAKE_REGION=us-east-1
+      - KAFKA_BOOTSTRAP=broker:29092
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./apps/analytics/jupyter/workspace:/workspace
+      - ./apps/batch/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf 
+    networks:
+      - common
   #   depends_on:
   #     - minio
   #     - kafka
