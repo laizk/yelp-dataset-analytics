@@ -1,1 +1,2 @@
 .env
+/apps/storage/minio/data/

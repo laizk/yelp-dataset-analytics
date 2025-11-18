@@ -43,44 +43,46 @@ services:
   #     echo 'Topics created successfully'
   #     "
 
-  # minio:
-  #   image: quay.io/minio/minio:latest
-  #   container_name: minio
-  #   environment:
-  #     MINIO_ROOT_USER: ${DATA_LAKE_ACCESS_KEY_ID}
-  #     MINIO_ROOT_PASSWORD: ${DATA_LAKE_SECRET_ACCESS_KEY}
-  #   command: server /data --console-address ":9001"
-  #   ports:
-  #     - "9000:9000"
-  #     - "9001:9001"
-  #   networks:
-  #     - common
-  #   volumes:
-  #     - ./minio/data:/data
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: minio
+    environment:
+      MINIO_ROOT_USER: ${DATA_LAKE_ACCESS_KEY_ID}
+      MINIO_ROOT_PASSWORD: ${DATA_LAKE_SECRET_ACCESS_KEY}
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - common
+    volumes:
+      - ./apps/storage/minio/data:/data
 
-  # createbuckets:
-  #   image: quay.io/minio/mc:latest
-  #   depends_on:
-  #     - minio
-  #   restart: on-failure
-  #   networks:
-  #     - common
-  #   entrypoint: >
-  #     /bin/sh -c "
-  #     sleep 5;
-  #     /usr/bin/mc alias set dockerminio http://minio:9000 ${DATA_LAKE_ACCESS_KEY_ID} ${DATA_LAKE_SECRET_ACCESS_KEY};
-  #     /usr/bin/mc mb dockerminio/staging;
-  #     /usr/bin/mc mb dockerminio/error;
-  #     exit 0;
-  #     "
+  createbuckets:
+    image: quay.io/minio/mc:latest
+    depends_on:
+      - minio
+    restart: on-failure
+    networks:
+      - common
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      /usr/bin/mc alias set dockerminio http://minio:9000 ${DATA_LAKE_ACCESS_KEY_ID} ${DATA_LAKE_SECRET_ACCESS_KEY};
+      /usr/bin/mc mb dockerminio/dlq;
+      /usr/bin/mc mb dockerminio/bronze;
+      /usr/bin/mc mb dockerminio/silver;
+      /usr/bin/mc mb dockerminio/gold;
+      exit 0;
+      "
 
   spark:
     build: ./apps/batch/spark
     container_name: batch-spark
-    # depends_on:
+    depends_on:
     #   - kafka
-    #   - minio
-    #   - createbuckets
+      - minio
+      - createbuckets
     environment:
       - DATA_LAKE_ENDPOINT=${DATA_LAKE_ENDPOINT}
       - DATA_LAKE_ACCESS_KEY_ID=${DATA_LAKE_ACCESS_KEY_ID}
@@ -132,8 +134,9 @@ services:
       - ./apps/batch/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf 
     networks:
       - common
-  #   depends_on:
-  #     - minio
+    depends_on:
+      - minio
+      - createbuckets
   #     - kafka
 
   # prometheus:
