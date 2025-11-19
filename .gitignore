@@ -1,2 +1,9 @@
+# Environment files
 .env
+
+# Virtual environment
+.venv
+
+# Apps files to ignore
 /apps/storage/minio/data/
+/apps/batch/airflow/logs/
