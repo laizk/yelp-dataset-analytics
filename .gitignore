@@ -7,3 +7,7 @@
 # Apps files to ignore
 /apps/storage/minio/data/
 /apps/batch/airflow/logs/
+
+# IDE files
+__pycache__/
+.vscode/
