@@ -1,0 +1,29 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+.env
+.env.*
+*.log
+
+# Editors / OS files
+.vscode/
+.idea/
+.DS_Store
+
+# Virtual environments
+venv/
+.env/
+
+# Git
+.git/
+.gitignore
+
+# Bytecode & cache
+__pycache__/
+build/
+dist/
+
+# Exclude local data or files
+data/

@@ -159,6 +159,21 @@ services:
     depends_on:
       - mongodb
 
+  fastapi:
+    build:
+      context: ./apps/api/fastapi
+      dockerfile: Dockerfile
+    container_name: fastapi-app
+    restart: always
+    ports:
+      - "8010:8010"
+    environment:
+      ENV: "production"
+    networks:
+      - common
+    volumes:
+      - ./apps/api/fastapi:/app  # remove this in production
+
   # prometheus:
   #   image: prom/prometheus
   #   volumes:
