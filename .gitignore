@@ -11,3 +11,12 @@
 # IDE files
 __pycache__/
 .vscode/
+
+# dbt files
+/apps/batch/dbt/target/
+/apps/batch/dbt/logs/
+*.duckdb
+.user.yml
+
+# Node modules
+node_modules/

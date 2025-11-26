@@ -211,6 +211,22 @@ services:
     networks:
       - common
 
+  dbt:
+    build:
+      context: ./apps/batch/dbt
+      dockerfile: Dockerfile
+    container_name: batch-dbt
+    volumes:
+      - ./apps/batch/dbt:/dbt
+    working_dir: /dbt
+    environment:
+      DBT_PROFILES_DIR: /dbt
+    entrypoint: ["/usr/local/bin/entrypoint.sh"]
+    networks:
+      - common
+    # depends_on:
+      # - duckdb 
+  
 
   # prometheus:
   #   image: prom/prometheus
