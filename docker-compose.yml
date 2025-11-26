@@ -40,10 +40,26 @@ services:
       echo 'Waiting for Kafka to be ready...'
       sleep 10
       /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server broker:29092 --partitions 3 --replication-factor 1 --topic raw_data
+      /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server broker:29092 --partitions 3 --replication-factor 1 --topic raw_data_business
+      /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server broker:29092 --partitions 3 --replication-factor 1 --topic raw_data_checkin
+      /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server broker:29092 --partitions 3 --replication-factor 1 --topic raw_data_user
+      /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server broker:29092 --partitions 3 --replication-factor 1 --topic raw_data_review
+      /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server broker:29092 --partitions 3 --replication-factor 1 --topic raw_data_tip
       /opt/kafka/bin/kafka-topics.sh --create --if-not-exists --bootstrap-server broker:29092 --partitions 3 --replication-factor 1 --topic consolidated_data
       /opt/kafka/bin/kafka-topics.sh --list --bootstrap-server broker:29092
       echo 'Topics created successfully'
       "
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8083:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: "local"
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "broker:29092"
+    networks:
+      - common      
 
   minio:
     image: quay.io/minio/minio:latest
@@ -160,6 +176,8 @@ services:
       - mongodb
 
   fastapi:
+    depends_on:
+      - kafka
     build:
       context: ./apps/api/fastapi
       dockerfile: Dockerfile
@@ -168,7 +186,9 @@ services:
     ports:
       - "8010:8010"
     environment:
-      ENV: "production"
+      ENV: "development"
+      KAFKA_BOOTSTRAP_SERVERS: "broker:29092"
+      KAFKA_TOPIC_BUSINESS: "raw_data"      
     networks:
       - common
     volumes:

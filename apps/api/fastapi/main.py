@@ -1,9 +1,14 @@
 from fastapi import FastAPI
 from api.routes import router as api_router
+from core.config import get_settings
 
-app = FastAPI(title='Yelp Dataset Analytics API')
+settings = get_settings()
 
-app.include_router(api_router, prefix='/api')
+app = FastAPI(title=settings.APP_NAME)
+
+# All API routes are under /api
+app.include_router(api_router, prefix="/api")
+
 
 @app.get("/")
 async def root():

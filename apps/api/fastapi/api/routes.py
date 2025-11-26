@@ -1,18 +1,21 @@
 from fastapi import APIRouter, HTTPException
 from schemas.business_schema import BusinessSchema
+from services.kafka_producer_services import publish_business_to_kafka
 
-router = APIRouter()
+router = APIRouter(prefix="/kafka", tags=["kafka"])
 
-@router.post('/kafka/publish/business')
+
+@router.post("/publish/business")
 async def publish_business(payload: BusinessSchema):
-    # You now have a fully validated payload
-    # Example: payload.name, payload.business_id, etc.
-
+    """
+    Accepts a BusinessSchema JSON body and publishes it to Kafka via the service layer.
+    """
     try:
-        # TODO: send to Kafka
-        # kafka_producer.send("business_topic", payload.dict())
-
-        return {"message": "Business published successfully", "data": payload}
+        result = publish_business_to_kafka(payload)
+        return {
+            "message": "Business published successfully",
+            "result": result,
+        }
     except Exception as e:
+        # Wrap any service error as HTTP 500
         raise HTTPException(status_code=500, detail=str(e))
-
