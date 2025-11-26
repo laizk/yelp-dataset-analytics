@@ -181,7 +181,7 @@ services:
     build:
       context: ./apps/api/fastapi
       dockerfile: Dockerfile
-    container_name: fastapi-app
+    container_name: backend-fastapi
     restart: always
     ports:
       - "8010:8010"
@@ -193,6 +193,24 @@ services:
       - common
     volumes:
       - ./apps/api/fastapi:/app  # remove this in production
+
+  streamlit:
+    depends_on:
+      - kafka
+    build:
+      context: ./apps/ui/streamlit
+      dockerfile: Dockerfile
+    container_name: frontend-streamlit
+    restart: always
+    ports:
+      - "8501:8501"
+    environment:
+      ENV: "development"
+    volumes:
+      - ./apps/ui/streamlit:/app     # <— THIS enables hot reload      
+    networks:
+      - common
+
 
   # prometheus:
   #   image: prom/prometheus
