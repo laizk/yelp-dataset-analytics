@@ -1,45 +1,107 @@
-# Paths to Docker Compose files
+# -----------------------------------------
+# File References
+# -----------------------------------------
 MAIN_COMPOSE = docker-compose.yml
 AIRFLOW_COMPOSE = docker-compose.airflow.yml
 
-# Default target
+# -----------------------------------------
+# Helper
+# -----------------------------------------
+ifndef SERVICE
+    SERVICE_MSG = "No service specified. Use: make <command> SERVICE=<name>"
+endif
+
+# -----------------------------------------
+# Full Stack Operations
+# -----------------------------------------
+
+.PHONY: up-all
+up-all:
+	# Example: make up-all
+	@echo "Starting ALL services..."
+	docker-compose -f $(MAIN_COMPOSE) -f $(AIRFLOW_COMPOSE) up -d --build
+
+.PHONY: down-all
+down-all:
+	# Example: make down-all
+	@echo "Stopping ALL services..."
+	docker-compose -f $(MAIN_COMPOSE) -f $(AIRFLOW_COMPOSE) down
+
+.PHONY: restart-all
+restart-all:
+	# Example: make restart-all
+	@echo "Restarting ALL services..."
+	$(MAKE) down-all
+	$(MAKE) up-all
+
+.PHONY: logs-all
+logs-all:
+	# Example: make logs-all
+	@echo "Showing logs for ALL services..."
+	docker-compose -f $(MAIN_COMPOSE) -f $(AIRFLOW_COMPOSE) logs -f
+
+# -----------------------------------------
+# Single-Service Operations (Generic)
+# -----------------------------------------
+
 .PHONY: up
 up:
-	@echo "Starting full stack (Kafka, Yelp Producer, Airflow)..."
-	docker-compose -f $(MAIN_COMPOSE) -f $(AIRFLOW_COMPOSE) up -d --build
+	# Example: make up SERVICE=fastapi
+	@if [ -z "$(SERVICE)" ]; then echo $(SERVICE_MSG); exit 1; fi
+	@echo "Starting service: $(SERVICE)"
+	docker-compose -f $(MAIN_COMPOSE) up -d --no-deps --build $(SERVICE)
 
 .PHONY: down
 down:
-	@echo "Stopping full stack..."
-	docker-compose -f $(MAIN_COMPOSE) -f $(AIRFLOW_COMPOSE) down
+	# Example: make down SERVICE=fastapi
+	@if [ -z "$(SERVICE)" ]; then echo $(SERVICE_MSG); exit 1; fi
+	@echo "Stopping service: $(SERVICE)"
+	docker-compose -f $(MAIN_COMPOSE) stop $(SERVICE)
 
-.PHONY: logs
-logs:
-	@echo "Showing logs for all services..."
-	docker-compose -f $(MAIN_COMPOSE) -f $(AIRFLOW_COMPOSE) logs -f
+.PHONY: kill
+kill:
+	# Example: make kill SERVICE=fastapi
+	@if [ -z "$(SERVICE)" ]; then echo $(SERVICE_MSG); exit 1; fi
+	@echo "Killing service: $(SERVICE)"
+	docker-compose -f $(MAIN_COMPOSE) kill $(SERVICE)
+
+.PHONY: build
+build:
+	# Example: make build SERVICE=fastapi
+	@if [ -z "$(SERVICE)" ]; then echo $(SERVICE_MSG); exit 1; fi
+	@echo "Building service: $(SERVICE)"
+	docker-compose -f $(MAIN_COMPOSE) build $(SERVICE)
 
 .PHONY: restart
 restart:
-	@echo "Restarting full stack..."
-	$(MAKE) down
-	$(MAKE) up
+	# Example: make restart SERVICE=fastapi
+	@if [ -z "$(SERVICE)" ]; then echo $(SERVICE_MSG); exit 1; fi
+	@echo "Restarting service: $(SERVICE)"
+	docker-compose -f $(MAIN_COMPOSE) stop $(SERVICE)
+	docker-compose -f $(MAIN_COMPOSE) up -d --build $(SERVICE)
 
-.PHONY: airflow
-airflow:
-	@echo "Starting only Airflow..."
+.PHONY: logs
+logs:
+	# Example: make logs SERVICE=fastapi
+	@if [ -z "$(SERVICE)" ]; then echo $(SERVICE_MSG); exit 1; fi
+	@echo "Logs for service: $(SERVICE)"
+	docker-compose -f $(MAIN_COMPOSE) logs -f $(SERVICE)
+
+# -----------------------------------------
+# Airflow Only
+# -----------------------------------------
+
+.PHONY: airflow-up
+airflow-up:
+	# Example: make airflow-up
 	docker-compose -f $(AIRFLOW_COMPOSE) up -d --build
 
 .PHONY: airflow-down
 airflow-down:
-	@echo "Stopping only Airflow..."
+	# Example: make airflow-down
 	docker-compose -f $(AIRFLOW_COMPOSE) down
 
-.PHONY: kafka
-kafka:
-	@echo "Starting Kafka stack..."
-	docker-compose -f $(MAIN_COMPOSE) up -d --build
-
-.PHONY: kafka-down
-kafka-down:
-	@echo "Stopping Kafka stack..."
-	docker-compose -f $(MAIN_COMPOSE) down
+.PHONY: airflow-logs
+airflow-logs:
+	# Example: make airflow-logs
+	docker-compose -f $(AIRFLOW_COMPOSE) logs -f
