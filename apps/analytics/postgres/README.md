@@ -1,4 +1,4 @@
-# duckdb
+# postgres
 
 ## Purpose
 Describe what this component does and why it exists.

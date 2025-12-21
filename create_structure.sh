@@ -31,9 +31,10 @@ mkdir -p apps/batch/airflow
 mkdir -p apps/batch/dbt
 
 mkdir -p apps/storage/minio
+mkdir -p apps/storage/postgres/initdb.d
 mkdir -p apps/storage/mongodb
 
-mkdir -p apps/analytics/duckdb
+mkdir -p apps/analytics/postgres
 mkdir -p apps/analytics/notebooks
 
 mkdir -p apps/datahub

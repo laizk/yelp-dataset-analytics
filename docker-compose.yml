@@ -221,12 +221,50 @@ services:
     working_dir: /dbt
     environment:
       DBT_PROFILES_DIR: /dbt
-    entrypoint: ["/usr/local/bin/entrypoint.sh"]
+      POSTGRES_HOST: analytics-postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    # entrypoint: ["/usr/local/bin/entrypoint.sh"]
     networks:
       - common
     # depends_on:
-      # - duckdb 
-  
+      # - analytics-postgres 
+
+  analytics-postgres:
+    image: postgres:16
+    container_name: analytics-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./apps/storage/postgres/initdb.d:/docker-entrypoint-initdb.d:ro
+    networks:
+      - common
+
+  api-posgres:
+    depends_on:
+      - analytics-postgres
+    container_name: api-postgres
+    build:
+      context: ./apps/analytics/postgres
+    environment:
+      POSTGRES_HOST: analytics-postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "8001:8001"
+    networks:
+      - common
+
+
 
   # prometheus:
   #   image: prom/prometheus
@@ -260,6 +298,9 @@ volumes:
   mongodb-log:
     driver: local
     name: mongo-log  
+  postgres-data:
+    driver: local
+    name: postgres-data
 
 networks:
   common:

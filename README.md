@@ -61,10 +61,11 @@ The platform supports:
 │   │
 │   ├── storage/
 │   │   ├── minio/            # Lakehouse object storage interface
-│   │   └── mongodb/          # OLTP / metadata store
+│   │   ├── mongodb/          # OLTP / metadata store
+│   │   └── postgres/         # OLAP storage bootstrap (init SQL)
 │   │
 │   ├── analytics/            # Analytics services
-│   │   ├── duckdb/           # OLAP store
+│   │   ├── postgres/         # OLAP store
 │   │   └── notebooks/        # Analysis notebooks
 │   │
 │   └── datahub/              # Catalog + lineage

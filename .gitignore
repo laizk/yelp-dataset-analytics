@@ -15,8 +15,11 @@ __pycache__/
 # dbt files
 /apps/batch/dbt/target/
 /apps/batch/dbt/logs/
-*.duckdb
+dbt_internal_packages/
 .user.yml
 
 # Node modules
 node_modules/
+
+# macOS files
+.DS_Store
