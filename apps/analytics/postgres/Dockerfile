@@ -1,7 +1,7 @@
 FROM python:3.12-slim
 
 # Lightweight HTTP API deps for Postgres
-RUN pip install --no-cache-dir fastapi uvicorn[standard] psycopg2-binary
+RUN pip install --no-cache-dir fastapi uvicorn[standard] psycopg2-binary clickhouse-connect
 
 WORKDIR /app
 COPY app.py /app/app.py
