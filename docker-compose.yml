@@ -212,6 +212,8 @@ services:
       - common
 
   dbt:
+    depends_on:
+      - analytics-postgres
     build:
       context: ./apps/batch/dbt
       dockerfile: Dockerfile
@@ -226,6 +228,11 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: 8123
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB}
     # entrypoint: ["/usr/local/bin/entrypoint.sh"]
     networks:
       - common
@@ -261,6 +268,21 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "8001:8001"
+    networks:
+      - common
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: analytics-clickhouse
+    environment:
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB}
+    ports:
+      - "8123:8123"
+      - "9003:9000"
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
     networks:
       - common
 
@@ -301,6 +323,9 @@ volumes:
   postgres-data:
     driver: local
     name: postgres-data
+  clickhouse-data:
+    driver: local
+    name: clickhouse-data
 
 networks:
   common:
