@@ -52,7 +52,7 @@ services:
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
-    container_name: kafka-ui
+    container_name: streaming-kafka-ui
     ports:
       - "8083:8080"
     environment:
@@ -77,6 +77,7 @@ services:
       - ./apps/storage/minio/data:/data
 
   createbuckets:
+    container_name: storage-minio-createbuckets
     image: quay.io/minio/mc:latest
     depends_on:
       - minio
@@ -94,9 +95,9 @@ services:
       exit 0;
       "
 
-  spark:
+  spark-master:
     build: ./apps/batch/spark
-    container_name: batch-spark
+    container_name: compute-spark-master
     depends_on:
       - kafka
       - minio
@@ -107,18 +108,40 @@ services:
       - DATA_LAKE_SECRET_ACCESS_KEY=${DATA_LAKE_SECRET_ACCESS_KEY}
       - DATA_LAKE_REGION=us-east-1
       - KAFKA_BOOTSTRAP=broker:29092
+      - SPARK_MASTER_HOST=0.0.0.0
+      - SPARK_MASTER_WEBUI_PORT=8085
+      - SPARK_PUBLIC_DNS=spark
     volumes:
       - ./apps/batch/spark:/app
       - ./apps/batch/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf      
     networks:
       - common
     ports:
+      - "7077:7077"
+      - "8085:8085"
       - "4040:4040"
-      - "8081:8080"
-      - "8000:8000"
-    command: ["/bin/bash"]
-    stdin_open: true # Equivalent to -i
-    tty: true        # Equivalent to -t
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"]
+
+  spark-worker:
+    build: ./apps/batch/spark
+    container_name: compute-spark-worker
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_WORKER_WEBUI_PORT=8086
+    volumes:
+      - ./apps/batch/spark:/app
+      - ./apps/batch/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+    networks:
+      - common
+    ports:
+      - "8086:8086"
+    command:
+      [
+        "/opt/spark/bin/spark-class",
+        "org.apache.spark.deploy.worker.Worker",
+        "spark://spark:7077"
+      ]
     
 
   jupyter:
