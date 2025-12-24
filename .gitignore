@@ -29,5 +29,6 @@ __blobstorage__
 data/
 
 # Jupyter Notebook checkpoints
+main-checkpoint.ipynb
 */**/.ipynb_checkpoints
 */**/*-checkpoint.ipynb
