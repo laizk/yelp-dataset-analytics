@@ -97,7 +97,8 @@ services:
 
   spark-master:
     build: ./apps/batch/spark
-    container_name: compute-spark-master
+    image: yelp-spark
+    container_name: spark-master
     depends_on:
       - kafka
       - minio
@@ -108,30 +109,52 @@ services:
       - DATA_LAKE_SECRET_ACCESS_KEY=${DATA_LAKE_SECRET_ACCESS_KEY}
       - DATA_LAKE_REGION=us-east-1
       - KAFKA_BOOTSTRAP=broker:29092
-      - SPARK_MASTER_HOST=0.0.0.0
+      - SPARK_MASTER_HOST=spark-master
       - SPARK_MASTER_WEBUI_PORT=8085
-      - SPARK_PUBLIC_DNS=spark
+      - SPARK_PUBLIC_DNS=spark-master
+
+      # MongoDB
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - MONGO_HOST=mongodb
+      - MONGO_PORT=27017
+      - MONGO_AUTH_DB=admin
+      - MONGO_APP_DB=yelp
+
     volumes:
       - ./apps/batch/spark:/app
       - ./apps/batch/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf      
+      - ./data:/data:ro
     networks:
       - common
     ports:
       - "7077:7077"
       - "8085:8085"
       - "4040:4040"
+      - "6066:6066"
     command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"]
 
   spark-worker:
     build: ./apps/batch/spark
-    container_name: compute-spark-worker
+    image: yelp-spark
+    container_name: spark-worker
     depends_on:
       - spark-master
     environment:
+      - SPARK_WORKER_MEMORY=4G
+      - SPARK_WORKER_CORES=2       
       - SPARK_WORKER_WEBUI_PORT=8086
+      # MongoDB
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - MONGO_HOST=mongodb
+      - MONGO_PORT=27017
+      - MONGO_AUTH_DB=admin
+      - MONGO_APP_DB=yelp
     volumes:
       - ./apps/batch/spark:/app
       - ./apps/batch/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+      - ./data:/data:ro
     networks:
       - common
     ports:
@@ -140,30 +163,41 @@ services:
       [
         "/opt/spark/bin/spark-class",
         "org.apache.spark.deploy.worker.Worker",
-        "spark://spark:7077"
+        "spark://spark-master:7077"
       ]
     
-
   jupyter:
     build: ./apps/analytics/jupyter
     container_name: analytics-jupyter
-    environment:
-      - DATA_LAKE_ENDPOINT=${DATA_LAKE_ENDPOINT}
-      - DATA_LAKE_ACCESS_KEY_ID=${DATA_LAKE_ACCESS_KEY_ID}
-      - DATA_LAKE_SECRET_ACCESS_KEY=${DATA_LAKE_SECRET_ACCESS_KEY}
-      - DATA_LAKE_REGION=us-east-1
-      - KAFKA_BOOTSTRAP=broker:29092
-    ports:
-      - "8888:8888"
-    volumes:
-      - ./apps/analytics/jupyter/workspace:/workspace
-      - ./apps/batch/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf 
-    networks:
-      - common
     depends_on:
       - minio
       - createbuckets
       - kafka
+      - mongodb
+    environment:
+      # MinIO / S3A
+      - DATA_LAKE_ENDPOINT=${DATA_LAKE_ENDPOINT}
+      - DATA_LAKE_ACCESS_KEY_ID=${DATA_LAKE_ACCESS_KEY_ID}
+      - DATA_LAKE_SECRET_ACCESS_KEY=${DATA_LAKE_SECRET_ACCESS_KEY}
+      - DATA_LAKE_REGION=us-east-1
+
+      # Kafka
+      - KAFKA_BOOTSTRAP=broker:29092
+
+      # MongoDB (for building the URI in notebooks)
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - MONGO_HOST=mongodb
+      - MONGO_PORT=27017
+      - MONGO_AUTH_DB=admin
+      - MONGO_APP_DB=yelp
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./apps/analytics/jupyter/workspace:/workspace
+      - ./apps/analytics/jupyter/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+    networks:
+      - common
 
   mongodb:
     image: mongo:latest
@@ -278,7 +312,7 @@ services:
     networks:
       - common
 
-  api-posgres:
+  api-postgres:
     depends_on:
       - analytics-postgres
     container_name: api-postgres
@@ -359,3 +393,4 @@ volumes:
 networks:
   common:
     driver: bridge
+    name: common

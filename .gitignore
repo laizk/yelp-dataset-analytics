@@ -23,6 +23,11 @@ node_modules/
 
 # macOS files
 .DS_Store
+__blobstorage__
 
 # data
 data/
+
+# Jupyter Notebook checkpoints
+*/**/.ipynb_checkpoints
+*/**/*-checkpoint.ipynb
