@@ -159,6 +159,78 @@ The platform supports:
 
 ------------------------------------------------------------------------
 
+## ⚙️ Environment Variables
+
+These are the primary environment variables used by the local stack.
+Defaults live in `.env` at the repo root.
+
+### Data Lake (MinIO)
+
+```sh
+DATA_LAKE_ACCESS_KEY_ID=admin
+DATA_LAKE_SECRET_ACCESS_KEY=admin123
+DATA_LAKE_ENDPOINT=http://minio:9000
+```
+
+### Kafka
+
+```sh
+KAFKA_BOOTSTRAP_SERVERS=broker:29092
+KAFKA_TOPIC_BUSINESS=raw_data
+KAFKA_TOPIC_REVIEW=raw_data_review
+```
+
+### Airflow
+
+```sh
+AIRFLOW_IMAGE_NAME=apache/airflow:3.1.3
+AIRFLOW_UID=50000
+AIRFLOW_PROJ_DIR=./apps/batch/airflow
+_AIRFLOW_WWW_USER_USERNAME=airflow
+_AIRFLOW_WWW_USER_PASSWORD=airflow
+_PIP_ADDITIONAL_REQUIREMENTS=pymongo==4.6.3
+```
+
+### Grafana
+
+```sh
+GF_SECURITY_ADMIN_USER=admin
+GF_SECURITY_ADMIN_PASSWORD=admin123
+```
+
+### MongoDB
+
+```sh
+MONGO_INITDB_ROOT_USERNAME=root
+MONGO_INITDB_ROOT_PASSWORD=password
+MONGO_EXPRESS_USERNAME=admin
+MONGO_EXPRESS_PASSWORD=password
+```
+
+### Postgres
+
+```sh
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=analytics
+```
+
+### ClickHouse
+
+```sh
+CLICKHOUSE_USER=clickhouse
+CLICKHOUSE_PASSWORD=clickhouse123
+CLICKHOUSE_DB=analytics
+```
+
+### Spark
+
+```sh
+SPARK_REST_URL=http://spark-master:6066
+```
+
+------------------------------------------------------------------------
+
 ## 🤝 Contributing
 
 See `/docs/` for architecture, data contracts, and conventions.
