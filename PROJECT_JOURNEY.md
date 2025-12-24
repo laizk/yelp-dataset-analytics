@@ -135,6 +135,8 @@ to pipeline logic.
 
 ## ⚠️ Challenges and Fixes
 
+### Spark
+
 -   **Spark S3A Filesystem Errors**
     -   Symptom: `ClassNotFoundException: org.apache.hadoop.fs.s3a.S3AFileSystem` during Delta writes.
     -   Root cause: Spark runtime was missing the Hadoop S3A filesystem implementation.
@@ -152,6 +154,13 @@ to pipeline logic.
     -   Fix (code): Added AWS SDK v2 bundle jars to both images and kept versions aligned.
         -   `apps/batch/spark/Dockerfile` adds `software/amazon/awssdk/bundle`
         -   `apps/batch/airflow/Dockerfile` adds the same bundle for the driver
+
+-   **Spark Python Jobs in Cluster Deploy Mode**
+    -   Symptom: `Cluster deploy mode is currently not supported for python applications on standalone clusters.`
+    -   Root cause: Spark standalone does not support Python in cluster mode.
+    -   Fix: switch to `spark.submit.deployMode=client` for Python jobs.
+
+### Airflow
 
 -   **Executor Crashes Due to JAR Shipping**
     -   Symptom: Netty transport errors while sending a 700MB AWS SDK bundle, followed by
@@ -175,6 +184,41 @@ to pipeline logic.
         -   `docker-compose.airflow.yml` sets
             `AIRFLOW__CORE__HOSTNAME_CALLABLE=airflow.utils.net.get_host_ip_address`
 
+-   **SparkSubmitOperator + Standalone Master URL**
+    -   Symptom: `Could not parse Master URL: 'spark-master:7077'`.
+    -   Root cause: Airflow connection normalized the host and stripped the scheme.
+    -   What we tried:
+        -   `AIRFLOW_CONN_SPARK_DEFAULT` (conn-uri) and `conn-json` in compose
+        -   Cluster deploy mode (failed for PySpark on standalone)
+    -   Why it failed: `conn-json` stores host/port without scheme, which yielded
+        `spark-master:7077` at submit time.
+    -   Fix: explicitly set `spark.master` in the DAG conf so `spark-submit` gets
+        `spark://spark-master:7077`.
+
+-   **Airflow CLI Connection Creation in Compose**
+    -   Symptom: `services.airflow-cli.environment.command must be a string...`
+    -   Root cause: `command:` was nested under `environment:` in YAML.
+    -   Fix: moved `command` to the correct level under `airflow-cli`.
+
+-   **Airflow ↔ Spark Execution Dependencies**
+    -   Symptom: `spark-submit` failed due to missing Java/Spark binaries.
+    -   Root cause: SparkSubmitOperator runs `spark-submit` inside Airflow container.
+    -   Fix: install OpenJDK + Spark in the Airflow image and set `SPARK_HOME`.
+
+-   **Delta Format Not Found in Client Mode**
+    -   Symptom: writes failed when using `df.write.format("delta")`.
+    -   Root cause: Airflow driver image lacked Delta jars/extensions even though
+        Spark worker image had them.
+    -   Fix: added Delta jars + `delta-spark` to `apps/batch/airflow/Dockerfile`
+        and kept client mode so the driver loads Delta.
+
+-   **Local File Paths Not Found in Airflow Driver**
+    -   Symptom: `PATH_NOT_FOUND` for `/data/raw/split/...` in client mode.
+    -   Root cause: Airflow containers mounted data at `/opt/airflow/data`, not `/data`.
+    -   Fix: added `./data:/data:ro` to `docker-compose.airflow.yml`.
+
+### Kafka
+
 -   **Kafka DNS Resolution Outside Docker**
     -   Symptom: `NoBrokersAvailable` when running producer on the host.
     -   Root cause: `broker:29092` only resolves inside Docker networks.
@@ -183,6 +227,8 @@ to pipeline logic.
     -   Fix (code/docs): Switched host examples to `localhost:9092`.
         -   `local/scripts/produce_reviews_to_kafka.py` example updated
         -   `.env.example` keeps Docker defaults for container runs
+
+### DuckDB
 
 -   **DuckDB Alpine Package Missing**
     -   Symptom: `apk add duckdb` failed (`no such package`).
@@ -227,43 +273,7 @@ to pipeline logic.
     -   Why it failed: no HTTP server exists without an explicit wrapper.
     -   Fix: Added a minimal FastAPI wrapper (`/health`, `/query`) to provide an HTTP endpoint.
 
--   **SparkSubmitOperator + Standalone Master URL**
-    -   Symptom: `Could not parse Master URL: 'spark-master:7077'`.
-    -   Root cause: Airflow connection normalized the host and stripped the scheme.
-    -   What we tried:
-        -   `AIRFLOW_CONN_SPARK_DEFAULT` (conn-uri) and `conn-json` in compose
-        -   Cluster deploy mode (failed for PySpark on standalone)
-    -   Why it failed: `conn-json` stores host/port without scheme, which yielded
-        `spark-master:7077` at submit time.
-    -   Fix: explicitly set `spark.master` in the DAG conf so `spark-submit` gets
-        `spark://spark-master:7077`.
-
--   **Airflow CLI Connection Creation in Compose**
-    -   Symptom: `services.airflow-cli.environment.command must be a string...`
-    -   Root cause: `command:` was nested under `environment:` in YAML.
-    -   Fix: moved `command` to the correct level under `airflow-cli`.
-
--   **Spark Python Jobs in Cluster Deploy Mode**
-    -   Symptom: `Cluster deploy mode is currently not supported for python applications on standalone clusters.`
-    -   Root cause: Spark standalone does not support Python in cluster mode.
-    -   Fix: switch to `spark.submit.deployMode=client` for Python jobs.
-
--   **Airflow ↔ Spark Execution Dependencies**
-    -   Symptom: `spark-submit` failed due to missing Java/Spark binaries.
-    -   Root cause: SparkSubmitOperator runs `spark-submit` inside Airflow container.
-    -   Fix: install OpenJDK + Spark in the Airflow image and set `SPARK_HOME`.
-
--   **Delta Format Not Found in Client Mode**
-    -   Symptom: writes failed when using `df.write.format("delta")`.
-    -   Root cause: Airflow driver image lacked Delta jars/extensions even though
-        Spark worker image had them.
-    -   Fix: added Delta jars + `delta-spark` to `apps/batch/airflow/Dockerfile`
-        and kept client mode so the driver loads Delta.
-
--   **Local File Paths Not Found in Airflow Driver**
-    -   Symptom: `PATH_NOT_FOUND` for `/data/raw/split/...` in client mode.
-    -   Root cause: Airflow containers mounted data at `/opt/airflow/data`, not `/data`.
-    -   Fix: added `./data:/data:ro` to `docker-compose.airflow.yml`.
+### MongoDB
 
 -   **MongoDB Spark Connector ClassNotFoundException**
     -   Symptom: `java.lang.ClassNotFoundException: com.mongodb.spark.sql.connector.MongoTableProvider` when writing to MongoDB.
