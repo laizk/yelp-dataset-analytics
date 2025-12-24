@@ -247,6 +247,12 @@ See `/docs/` for architecture, data contracts, and conventions.
 
 ------------------------------------------------------------------------
 
+## 📝 Project Journey
+
+See `PROJECT_JOURNEY.md` for the full build narrative, challenges, fixes, and lessons learned.
+
+-----------------------------------------------------------------------
+
 ## 📄 License
 
 MIT or organization license.
