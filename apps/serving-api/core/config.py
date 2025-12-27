@@ -2,7 +2,7 @@ import os
 from functools import lru_cache
 
 class Settings:
-    APP_NAME: str = "Yelp Dataset Analytics API"
+    APP_NAME: str = "Yelp Serving API"
     
     # Kafka configuration
     KAFKA_BOOTSTRAP_SERVERS: str = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "broker:29092")

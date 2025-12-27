@@ -232,13 +232,13 @@ services:
     depends_on:
       - mongodb
 
-  fastapi:
+  serving-api:
     depends_on:
       - kafka
     build:
-      context: ./apps/api/fastapi
+      context: ./apps/serving-api
       dockerfile: Dockerfile
-    container_name: backend-fastapi
+    container_name: backend-serving-api
     restart: always
     ports:
       - "8010:8010"
@@ -249,7 +249,7 @@ services:
     networks:
       - common
     volumes:
-      - ./apps/api/fastapi:/app  # remove this in production
+      - ./apps/serving-api:/app  # remove this in production
 
   streamlit:
     depends_on:

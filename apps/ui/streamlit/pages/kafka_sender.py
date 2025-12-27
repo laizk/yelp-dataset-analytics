@@ -2,8 +2,8 @@ import streamlit as st
 import requests
 import json
 
-FASTAPI_URL = "http://backend-fastapi:8010/api/kafka/publish/business"  
-# ^ Change to your FastAPI container name + port
+SERVING_API_URL = "http://backend-serving-api:8010/api/kafka/publish/business"
+# ^ Change to your serving API container name + port
 
 st.title("Kafka Business Publisher")
 
@@ -22,7 +22,7 @@ if st.button("Send to Kafka"):
 
             # Send to FastAPI endpoint
             response = requests.post(
-                FASTAPI_URL,
+                SERVING_API_URL,
                 json=payload,
                 timeout=8
             )

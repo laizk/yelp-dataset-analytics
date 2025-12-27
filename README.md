@@ -41,8 +41,7 @@ The platform supports:
 │   │   ├── streamlit/        # Analytics or business UI 
 │   │   └── react/            # (if you have a separate frontend)
 │   │
-│   ├── api/
-│   │   └── fastapi/          # REST APIs (source ingestion, AI orchestration, users)
+│   ├── serving-api/          # REST APIs (ingestion + app-serving)
 │   │
 │   ├── ai/                   # RAG / embedding / LLM services
 │   │   ├── embeddings/       # embedding pipeline (Ollama, BGE, etc.)

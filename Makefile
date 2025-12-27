@@ -46,35 +46,35 @@ logs-all:
 
 .PHONY: up
 up:
-	# Example: make up SERVICE=fastapi
+	# Example: make up SERVICE=serving-api
 	@if [ -z "$(SERVICE)" ]; then echo $(SERVICE_MSG); exit 1; fi
 	@echo "Starting service: $(SERVICE)"
 	docker-compose -f $(MAIN_COMPOSE) up -d --no-deps --build $(SERVICE)
 
 .PHONY: down
 down:
-	# Example: make down SERVICE=fastapi
+	# Example: make down SERVICE=serving-api
 	@if [ -z "$(SERVICE)" ]; then echo $(SERVICE_MSG); exit 1; fi
 	@echo "Stopping service: $(SERVICE)"
 	docker-compose -f $(MAIN_COMPOSE) stop $(SERVICE)
 
 .PHONY: kill
 kill:
-	# Example: make kill SERVICE=fastapi
+	# Example: make kill SERVICE=serving-api
 	@if [ -z "$(SERVICE)" ]; then echo $(SERVICE_MSG); exit 1; fi
 	@echo "Killing service: $(SERVICE)"
 	docker-compose -f $(MAIN_COMPOSE) kill $(SERVICE)
 
 .PHONY: build
 build:
-	# Example: make build SERVICE=fastapi
+	# Example: make build SERVICE=serving-api
 	@if [ -z "$(SERVICE)" ]; then echo $(SERVICE_MSG); exit 1; fi
 	@echo "Building service: $(SERVICE)"
 	docker-compose -f $(MAIN_COMPOSE) build $(SERVICE)
 
 .PHONY: restart
 restart:
-	# Example: make restart SERVICE=fastapi
+	# Example: make restart SERVICE=serving-api
 	@if [ -z "$(SERVICE)" ]; then echo $(SERVICE_MSG); exit 1; fi
 	@echo "Restarting service: $(SERVICE)"
 	docker-compose -f $(MAIN_COMPOSE) stop $(SERVICE)
@@ -82,7 +82,7 @@ restart:
 
 .PHONY: logs
 logs:
-	# Example: make logs SERVICE=fastapi
+	# Example: make logs SERVICE=serving-api
 	@if [ -z "$(SERVICE)" ]; then echo $(SERVICE_MSG); exit 1; fi
 	@echo "Logs for service: $(SERVICE)"
 	docker-compose -f $(MAIN_COMPOSE) logs -f $(SERVICE)

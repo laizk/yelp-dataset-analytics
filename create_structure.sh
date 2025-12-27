@@ -16,7 +16,7 @@ mkdir -p tests
 mkdir -p apps/ui/streamlit
 mkdir -p apps/ui/react
 
-mkdir -p apps/api/fastapi
+mkdir -p apps/serving-api
 
 mkdir -p apps/ai/embeddings
 mkdir -p apps/ai/llm
