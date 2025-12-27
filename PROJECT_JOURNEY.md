@@ -359,6 +359,15 @@ These issues closely mirror production incidents seen in real data teams.
 -   Set up a test Spark job that validates all integrations (Delta write, S3A read, MongoDB read/write)
     as a smoke test before building complex pipelines.
 
+## 🧱 Structure and Naming
+
+-   Use role-based service names (`serving-api`, `analytics-api`) instead of framework names
+    so the intent is clear even as the stack evolves.
+-   Keep folders aligned with domain boundaries (serving, analytics, batch, storage, UI)
+    to make ownership and deployment responsibilities obvious.
+-   Treat naming as part of the architecture: clear paths reduce onboarding time and prevent
+    accidental coupling between OLTP and BI concerns.
+
 ## 🔮 Next Steps
 
 -   Add Spark Structured Streaming consumers for Kafka review topics.
