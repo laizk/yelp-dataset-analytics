@@ -8,9 +8,11 @@ from services.kafka_producer_services import (
     publish_review_to_kafka,
 )
 from services.mongo_business_services import upsert_business
+from services.mongo_user_services import upsert_user
 
 kafka_router = APIRouter(prefix="/kafka", tags=["kafka"])
 business_router = APIRouter(prefix="/businesses", tags=["businesses"])
+user_router = APIRouter(prefix="/users", tags=["users"])
 
 
 @kafka_router.post("/publish/business")
@@ -153,6 +155,21 @@ async def register_business(payload: BusinessSchema):
         result = upsert_business(payload)
         return {
             "message": "Business stored successfully",
+            "result": result,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@user_router.post("")
+async def register_user(payload: UserSchema):
+    """
+    Accepts a UserSchema JSON body and upserts it into MongoDB.
+    """
+    try:
+        result = upsert_user(payload)
+        return {
+            "message": "User stored successfully",
             "result": result,
         }
     except Exception as e:

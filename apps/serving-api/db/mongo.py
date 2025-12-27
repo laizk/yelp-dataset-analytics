@@ -23,3 +23,9 @@ def get_business_collection():
     settings = get_settings()
     client = get_mongo_client()
     return client[settings.MONGO_DB][settings.MONGO_COLLECTION_BUSINESS]
+
+
+def get_user_collection():
+    settings = get_settings()
+    client = get_mongo_client()
+    return client[settings.MONGO_DB][settings.MONGO_COLLECTION_USER]
