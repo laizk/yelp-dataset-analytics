@@ -5,6 +5,7 @@ from typing import Any, Dict
 from kafka import KafkaProducer
 from schemas.business_schema import BusinessSchema
 from schemas.user_schema import UserSchema
+from schemas.review_schema import ReviewSchema
 from core.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -71,3 +72,12 @@ def publish_user_to_kafka(user: UserSchema) -> Dict[str, Any]:
     """
     payload_dict = user.model_dump()
     return _publish_to_kafka(payload_dict, settings.KAFKA_TOPIC_USER, "user")
+
+
+def publish_review_to_kafka(review: ReviewSchema) -> Dict[str, Any]:
+    """
+    Review logic: take a validated ReviewSchema and publish to Kafka.
+    Return a small response dict (so routes can directly return it).
+    """
+    payload_dict = review.model_dump()
+    return _publish_to_kafka(payload_dict, settings.KAFKA_TOPIC_REVIEW, "review")

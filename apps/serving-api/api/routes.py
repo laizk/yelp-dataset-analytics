@@ -1,7 +1,12 @@
 from fastapi import APIRouter, HTTPException
 from schemas.business_schema import BusinessSchema
 from schemas.user_schema import UserSchema
-from services.kafka_producer_services import publish_business_to_kafka, publish_user_to_kafka
+from schemas.review_schema import ReviewSchema
+from services.kafka_producer_services import (
+    publish_business_to_kafka,
+    publish_user_to_kafka,
+    publish_review_to_kafka,
+)
 
 router = APIRouter(prefix="/kafka", tags=["kafka"])
 
@@ -63,6 +68,41 @@ async def publish_user(payload: UserSchema):
         result = publish_user_to_kafka(payload)
         return {
             "message": "User published successfully",
+            "result": result,
+        }
+    except Exception as e:
+        # Wrap any service error as HTTP 500
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/publish/review")
+async def publish_review(payload: ReviewSchema):
+    """
+    Accepts a ReviewSchema JSON body and publishes it to Kafka via the service layer.
+
+    Swagger:
+    - Run the serving API, then open http://localhost:8010/docs
+    - POST /api/kafka/publish/review with a JSON body like:
+      {
+        "review_id": "KU_O5udG6zpxOg-VcAEodg",
+        "user_id": "mh_-eMZ6K5RLWhZyISBhwA",
+        "business_id": "XQfwVwDr-v0ZS3_CbbE5Xw",
+        "stars": 3,
+        "useful": 0,
+        "funny": 0,
+        "cool": 0,
+        "text": "If you decide to eat here...",
+        "date": "2018-07-07 22:09:11"
+      }
+
+    Postman:
+    - POST http://localhost:8010/api/kafka/publish/review
+    - Body: raw JSON (same payload as above)
+    """
+    try:
+        result = publish_review_to_kafka(payload)
+        return {
+            "message": "Review published successfully",
             "result": result,
         }
     except Exception as e:
