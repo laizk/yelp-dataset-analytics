@@ -21,8 +21,9 @@ import requests
 
 
 def _default_api_url() -> str:
-    """Pick the serving API URL from env; fall back to the local default."""
-    return os.getenv("KAFKA_API_URL") or "http://localhost:8010/api/kafka/publish/review"
+    """Pick the serving API base URL from env; fall back to the local default."""
+    base_url = os.getenv("KAFKA_API_URL") or "http://localhost:8010/api/kafka/publish"
+    return base_url.rstrip("/") + "/review"
 
 
 def _iter_jsonl(path: Path, start_line: int) -> tuple[int, dict]:
