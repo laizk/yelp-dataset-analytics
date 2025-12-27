@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from schemas.business_schema import BusinessSchema
-from services.kafka_producer_services import publish_business_to_kafka
+from schemas.user_schema import UserSchema
+from services.kafka_producer_services import publish_business_to_kafka, publish_user_to_kafka
 
 router = APIRouter(prefix="/kafka", tags=["kafka"])
 
@@ -14,6 +15,54 @@ async def publish_business(payload: BusinessSchema):
         result = publish_business_to_kafka(payload)
         return {
             "message": "Business published successfully",
+            "result": result,
+        }
+    except Exception as e:
+        # Wrap any service error as HTTP 500
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/publish/user")
+async def publish_user(payload: UserSchema):
+    """
+    Accepts a UserSchema JSON body and publishes it to Kafka via the service layer.
+
+    Swagger:
+    - Run the serving API, then open http://localhost:8010/docs
+    - POST /api/kafka/publish/user with a JSON body like:
+      {
+        "user_id": "abc123",
+        "name": "Jane Doe",
+        "review_count": 12,
+        "yelping_since": "2020-01-15",
+        "useful": 3,
+        "funny": 1,
+        "cool": 2,
+        "fans": 0,
+        "average_stars": 4.2,
+        "friends": "",
+        "elite": "",
+        "compliment_hot": 0,
+        "compliment_more": 0,
+        "compliment_profile": 0,
+        "compliment_cute": 0,
+        "compliment_list": 0,
+        "compliment_note": 0,
+        "compliment_plain": 0,
+        "compliment_cool": 0,
+        "compliment_funny": 0,
+        "compliment_writer": 0,
+        "compliment_photos": 0
+      }
+
+    Postman:
+    - POST http://localhost:8010/api/kafka/publish/user
+    - Body: raw JSON (same payload as above)
+    """
+    try:
+        result = publish_user_to_kafka(payload)
+        return {
+            "message": "User published successfully",
             "result": result,
         }
     except Exception as e:

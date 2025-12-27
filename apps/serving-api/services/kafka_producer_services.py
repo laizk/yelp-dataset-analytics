@@ -4,6 +4,7 @@ from typing import Any, Dict
 
 from kafka import KafkaProducer
 from schemas.business_schema import BusinessSchema
+from schemas.user_schema import UserSchema
 from core.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -24,26 +25,12 @@ def get_producer() -> KafkaProducer:
     return producer
 
 
-def publish_business_to_kafka(business: BusinessSchema) -> Dict[str, Any]:
-    """
-    Business logic: take a validated BusinessSchema and publish to Kafka.
-    Return a small response dict (so routes can directly return it).
-    """
-    # Pydantic v2: model_dump(); if you're on v1, use .dict()
-    payload_dict = business.model_dump()  # or business.dict() for pydantic v1
-    
-    p = get_producer()  # <-- created only now    
-    
-    print('business payload_dict:', payload_dict)
-
-    logger.info(
-        "Publishing business to Kafka topic '%s': %s",
-        settings.KAFKA_TOPIC_BUSINESS,
-        payload_dict,
-    )
+def _publish_to_kafka(payload_dict: Dict[str, Any], topic: str, entity: str) -> Dict[str, Any]:
+    p = get_producer()
+    logger.info("Publishing %s to Kafka topic '%s': %s", entity, topic, payload_dict)
 
     try:
-        future = p.send(settings.KAFKA_TOPIC_BUSINESS, payload_dict)
+        future = p.send(topic, payload_dict)
         # Block until the send is actually done (optional)
         record_metadata = future.get(timeout=10)
 
@@ -62,6 +49,25 @@ def publish_business_to_kafka(business: BusinessSchema) -> Dict[str, Any]:
         }
 
     except Exception as exc:
-        logger.exception("Failed to publish message to Kafka")
+        logger.exception("Failed to publish %s message to Kafka", entity)
         # Let caller decide what to do with the error
         raise exc
+
+
+def publish_business_to_kafka(business: BusinessSchema) -> Dict[str, Any]:
+    """
+    Business logic: take a validated BusinessSchema and publish to Kafka.
+    Return a small response dict (so routes can directly return it).
+    """
+    # Pydantic v2: model_dump(); if you're on v1, use .dict()
+    payload_dict = business.model_dump()  # or business.dict() for pydantic v1
+    return _publish_to_kafka(payload_dict, settings.KAFKA_TOPIC_BUSINESS, "business")
+
+
+def publish_user_to_kafka(user: UserSchema) -> Dict[str, Any]:
+    """
+    User logic: take a validated UserSchema and publish to Kafka.
+    Return a small response dict (so routes can directly return it).
+    """
+    payload_dict = user.model_dump()
+    return _publish_to_kafka(payload_dict, settings.KAFKA_TOPIC_USER, "user")
