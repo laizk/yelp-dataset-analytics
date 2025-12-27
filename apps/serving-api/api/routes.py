@@ -7,11 +7,13 @@ from services.kafka_producer_services import (
     publish_user_to_kafka,
     publish_review_to_kafka,
 )
+from services.mongo_business_services import upsert_business
 
-router = APIRouter(prefix="/kafka", tags=["kafka"])
+kafka_router = APIRouter(prefix="/kafka", tags=["kafka"])
+business_router = APIRouter(prefix="/businesses", tags=["businesses"])
 
 
-@router.post("/publish/business")
+@kafka_router.post("/publish/business")
 async def publish_business(payload: BusinessSchema):
     """
     Accepts a BusinessSchema JSON body and publishes it to Kafka via the service layer.
@@ -59,7 +61,7 @@ async def publish_business(payload: BusinessSchema):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/publish/user")
+@kafka_router.post("/publish/user")
 async def publish_user(payload: UserSchema):
     """
     Accepts a UserSchema JSON body and publishes it to Kafka via the service layer.
@@ -107,7 +109,7 @@ async def publish_user(payload: UserSchema):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/publish/review")
+@kafka_router.post("/publish/review")
 async def publish_review(payload: ReviewSchema):
     """
     Accepts a ReviewSchema JSON body and publishes it to Kafka via the service layer.
@@ -139,4 +141,19 @@ async def publish_review(payload: ReviewSchema):
         }
     except Exception as e:
         # Wrap any service error as HTTP 500
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@business_router.post("")
+async def register_business(payload: BusinessSchema):
+    """
+    Accepts a BusinessSchema JSON body and upserts it into MongoDB.
+    """
+    try:
+        result = upsert_business(payload)
+        return {
+            "message": "Business stored successfully",
+            "result": result,
+        }
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

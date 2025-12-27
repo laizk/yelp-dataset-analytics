@@ -1,13 +1,15 @@
-import streamlit as st
-import requests
 import json
+import os
 
-SERVING_API_URL = "http://backend-serving-api:8010/api/kafka/publish/business"
-# ^ Change to your serving API container name + port
+import requests
+import streamlit as st
+
+SERVING_API_URL = os.getenv("SERVING_API_URL", "http://backend-serving-api:8010/api")
+BUSINESS_PUBLISH_URL = f"{SERVING_API_URL.rstrip('/')}/kafka/publish/business"
 
 st.title("Kafka Business Publisher")
 
-st.write("Paste your JSON payload below. This will be sent to FastAPI, which publishes to Kafka.")
+    st.write("Paste your JSON payload below. This will be sent to the serving API.")
 
 # Multiline JSON textbox
 json_input = st.text_area("JSON Payload", height=200, placeholder='{\n  "business_name": "Acme Corp",\n  "value": 100\n}')
@@ -22,7 +24,7 @@ if st.button("Send to Kafka"):
 
             # Send to FastAPI endpoint
             response = requests.post(
-                SERVING_API_URL,
+                BUSINESS_PUBLISH_URL,
                 json=payload,
                 timeout=8
             )
