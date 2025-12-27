@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
-Stream Yelp review JSONL records into Kafka with safety and progress controls.
+Stream Yelp review JSONL records into the serving API with safety and progress controls.
 
 Usage example (from repo root):
   python local/scripts/produce_reviews_to_kafka.py \
-    --bootstrap localhost:9092 \
-    --topic raw_data_review \
+    --api-url http://localhost:8010/api/kafka/publish/review \
     --max-records 10000 \
     --sleep-seconds 2 \
     --log-every 1
@@ -18,21 +17,12 @@ import time
 from pathlib import Path
 from typing import Optional
 
-from kafka import KafkaProducer
+import requests
 
 
-def _default_bootstrap() -> str:
-    """Pick the Kafka server address from env; fall back to the local default."""
-    return (
-        os.getenv("KAFKA_BOOTSTRAP_SERVERS")
-        or os.getenv("KAFKA_BOOTSTRAP")
-        or "broker:29092"
-    )
-
-
-def _default_topic() -> str:
-    """Choose the Kafka topic name for reviews; use the project default if unset."""
-    return os.getenv("KAFKA_TOPIC_REVIEW") or "raw_data_review"
+def _default_api_url() -> str:
+    """Pick the serving API URL from env; fall back to the local default."""
+    return os.getenv("KAFKA_API_URL") or "http://localhost:8010/api/kafka/publish/review"
 
 
 def _iter_jsonl(path: Path, start_line: int) -> tuple[int, dict]:
@@ -48,8 +38,7 @@ def _iter_jsonl(path: Path, start_line: int) -> tuple[int, dict]:
 
 
 def _send_reviews(
-    producer: KafkaProducer,
-    topic: str,
+    api_url: str,
     path: Path,
     start_line: int,
     max_records: Optional[int],
@@ -67,9 +56,9 @@ def _send_reviews(
     - log_every: print progress updates for long runs.
     """
     logging.info(
-        "Starting producer: file=%s topic=%s start_line=%d max_records=%s",
+        "Starting producer: file=%s api_url=%s start_line=%d max_records=%s",
         path,
-        topic,
+        api_url,
         start_line,
         str(max_records) if max_records is not None else "all",
     )
@@ -80,16 +69,15 @@ def _send_reviews(
     for line_no, row in _iter_jsonl(path, start_line):
         review_id = row.get("review_id")
         try:
-            producer.send(topic, key=review_id, value=row)
+            response = requests.post(api_url, json=row, timeout=10)
+            response.raise_for_status()
             sent += 1
         except Exception:  # noqa: BLE001 - want to keep sending
             failures += 1
 
         if sent and sent % flush_interval == 0:
-            # Flush forces buffered messages out to Kafka and waits for acks.
-            # This uses local process memory; flush makes sure records are sent
-            # and acknowledged instead of sitting in the producer buffer.
-            producer.flush()
+            # No flush needed; keep this checkpoint to mirror Kafka pacing behavior.
+            logging.info("Checkpoint: sent %d records to serving API", sent)
 
         if sent and sent % log_every == 0:
             elapsed = time.time() - start_time
@@ -110,17 +98,16 @@ def _send_reviews(
         if sleep_seconds > 0:
             time.sleep(sleep_seconds)
 
-    producer.flush()
     logging.info("Done. Sent %d records (failures=%d).", sent, failures)
     return sent
 
 
 def main() -> None:
     """
-    Parse CLI args, connect to Kafka, and stream review records.
+    Parse CLI args, connect to the serving API, and stream review records.
 
     Features:
-    - CLI overrides for file path, topic, and bootstrap servers.
+    - CLI overrides for file path and API URL.
     - Start-line and max-records controls for partial loads or retries.
     - Tunable flush/log intervals for throughput vs. observability.
     """
@@ -134,14 +121,9 @@ def main() -> None:
         help="Path to review JSONL part1 file",
     )
     parser.add_argument(
-        "--bootstrap",
-        default=_default_bootstrap(),
-        help="Kafka bootstrap servers (env KAFKA_BOOTSTRAP_SERVERS or KAFKA_BOOTSTRAP)",
-    )
-    parser.add_argument(
-        "--topic",
-        default=_default_topic(),
-        help="Kafka topic (env KAFKA_TOPIC_REVIEW)",
+        "--api-url",
+        default=_default_api_url(),
+        help="Serving API endpoint (env KAFKA_API_URL)",
     )
     parser.add_argument(
         "--start-line",
@@ -177,17 +159,8 @@ def main() -> None:
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-    producer = KafkaProducer(
-        bootstrap_servers=args.bootstrap,
-        key_serializer=lambda v: v.encode("utf-8") if v else None,
-        value_serializer=lambda v: json.dumps(v, ensure_ascii=True).encode("utf-8"),
-        retries=5,
-        acks="all",
-    )
-
     _send_reviews(
-        producer=producer,
-        topic=args.topic,
+        api_url=args.api_url,
         path=args.input,
         start_line=max(args.start_line, 1),
         max_records=args.max_records,
