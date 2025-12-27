@@ -27,6 +27,7 @@ class Settings:
         "MONGO_COLLECTION_BUSINESS", "businesses"
     )
     MONGO_COLLECTION_USER: str = os.getenv("MONGO_COLLECTION_USER", "users")
+    MONGO_COLLECTION_REVIEW: str = os.getenv("MONGO_COLLECTION_REVIEW", "reviews")
     
 @lru_cache
 def get_settings() -> Settings:
