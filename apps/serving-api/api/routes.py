@@ -15,6 +15,38 @@ router = APIRouter(prefix="/kafka", tags=["kafka"])
 async def publish_business(payload: BusinessSchema):
     """
     Accepts a BusinessSchema JSON body and publishes it to Kafka via the service layer.
+
+    Swagger:
+    - Run the serving API, then open http://localhost:8010/docs
+    - POST /api/kafka/publish/business with a JSON body like:
+      {
+        "business_id": "8wGISYjYkE2tSqn3cDMu8A",
+        "name": "Nifty Car Rental",
+        "address": "1241 Airline Dr",
+        "city": "Kenner",
+        "state": "LA",
+        "postal_code": "70062",
+        "latitude": 29.981183,
+        "longitude": -90.2540123,
+        "stars": 3.5,
+        "review_count": 14,
+        "is_open": 1,
+        "attributes": null,
+        "categories": "Automotive, Car Rental, Hotels & Travel, Truck Rental",
+        "hours": {
+          "Monday": "8:0-17:0",
+          "Tuesday": "8:0-17:0",
+          "Wednesday": "8:0-17:0",
+          "Thursday": "8:0-17:0",
+          "Friday": "8:0-17:0",
+          "Saturday": "9:0-15:0",
+          "Sunday": "9:0-12:0"
+        }
+      }
+
+    Postman:
+    - POST http://localhost:8010/api/kafka/publish/business
+    - Body: raw JSON (same payload as above)
     """
     try:
         result = publish_business_to_kafka(payload)
