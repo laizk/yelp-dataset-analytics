@@ -263,7 +263,7 @@ services:
       - "8501:8501"
     environment:
       ENV: "development"
-      ANALYTICS_API_URL: "http://api-postgres:8001"
+      ANALYTICS_API_URL: "http://analytics-api:8001"
     volumes:
       - ./apps/ui/streamlit:/app     # <— THIS enables hot reload      
     networks:
@@ -312,12 +312,12 @@ services:
     networks:
       - common
 
-  api-postgres:
+  analytics-api:
     depends_on:
       - analytics-postgres
-    container_name: api-postgres
+    container_name: analytics-api
     build:
-      context: ./apps/analytics/postgres
+      context: ./apps/analytics/analytics-api
     environment:
       POSTGRES_HOST: analytics-postgres
       POSTGRES_PORT: 5432

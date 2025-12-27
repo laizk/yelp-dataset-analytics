@@ -64,7 +64,7 @@ The platform supports:
 │   │   └── postgres/         # OLAP storage bootstrap (init SQL)
 │   │
 │   ├── analytics/            # Analytics services
-│   │   ├── postgres/         # OLAP store
+│   │   ├── analytics-api/    # BI/OLAP query API
 │   │   └── notebooks/        # Analysis notebooks
 │   │
 │   └── datahub/              # Catalog + lineage

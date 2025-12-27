@@ -34,7 +34,7 @@ mkdir -p apps/storage/minio
 mkdir -p apps/storage/postgres/initdb.d
 mkdir -p apps/storage/mongodb
 
-mkdir -p apps/analytics/postgres
+mkdir -p apps/analytics/analytics-api
 mkdir -p apps/analytics/notebooks
 
 mkdir -p apps/datahub

@@ -18,7 +18,7 @@ CLICKHOUSE_USER = os.getenv("CLICKHOUSE_USER", "clickhouse")
 CLICKHOUSE_PASSWORD = os.getenv("CLICKHOUSE_PASSWORD", "clickhouse123")
 CLICKHOUSE_DB = os.getenv("CLICKHOUSE_DB", "analytics")
 
-app = FastAPI(title="Postgres HTTP API", version="0.1.0")
+app = FastAPI(title="Analytics API", version="0.1.0")
 
 
 class QueryRequest(BaseModel):

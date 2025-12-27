@@ -5,7 +5,7 @@ import requests
 import streamlit as st
 
 
-ANALYTICS_API_URL = os.getenv("ANALYTICS_API_URL", "http://api-postgres:8001")
+ANALYTICS_API_URL = os.getenv("ANALYTICS_API_URL", "http://analytics-api:8001")
 
 st.title("Main Dashboard")
 st.write("Analytics API + quick chart demo.")
