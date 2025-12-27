@@ -7,9 +7,9 @@ from services.kafka_producer_services import (
     publish_user_to_kafka,
     publish_review_to_kafka,
 )
-from services.mongo_business_services import upsert_business
-from services.mongo_user_services import upsert_user
-from services.mongo_review_services import upsert_review
+from services.mongo_business_services import list_businesses, upsert_business
+from services.mongo_user_services import list_users, upsert_user
+from services.mongo_review_services import list_reviews, upsert_review
 
 kafka_router = APIRouter(prefix="/kafka", tags=["kafka"])
 business_router = APIRouter(prefix="/businesses", tags=["businesses"])
@@ -163,6 +163,14 @@ async def register_business(payload: BusinessSchema):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@business_router.get("")
+async def get_businesses(limit: int = 20):
+    try:
+        return {"items": list_businesses(limit=limit)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @user_router.post("")
 async def register_user(payload: UserSchema):
     """
@@ -178,6 +186,14 @@ async def register_user(payload: UserSchema):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@user_router.get("")
+async def get_users(limit: int = 20):
+    try:
+        return {"items": list_users(limit=limit)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @review_router.post("")
 async def register_review(payload: ReviewSchema):
     """
@@ -189,5 +205,13 @@ async def register_review(payload: ReviewSchema):
             "message": "Review stored successfully",
             "result": result,
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@review_router.get("")
+async def get_reviews(limit: int = 20):
+    try:
+        return {"items": list_reviews(limit=limit)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
