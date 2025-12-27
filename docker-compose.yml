@@ -167,7 +167,7 @@ services:
       ]
     
   jupyter:
-    build: ./apps/analytics/jupyter
+    build: ./apps/analytics/notebooks
     container_name: analytics-jupyter
     depends_on:
       - minio
@@ -194,8 +194,8 @@ services:
     ports:
       - "8888:8888"
     volumes:
-      - ./apps/analytics/jupyter/workspace:/workspace
-      - ./apps/analytics/jupyter/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+      - ./apps/analytics/notebooks/workspace:/workspace
+      - ./apps/analytics/notebooks/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
     networks:
       - common
 

@@ -361,12 +361,14 @@ These issues closely mirror production incidents seen in real data teams.
 
 ## 🧱 Structure and Naming
 
--   Use role-based service names (`serving-api`, `analytics-api`) instead of framework names
-    so the intent is clear even as the stack evolves.
--   Keep folders aligned with domain boundaries (serving, analytics, batch, storage, UI)
-    to make ownership and deployment responsibilities obvious.
--   Treat naming as part of the architecture: clear paths reduce onboarding time and prevent
-    accidental coupling between OLTP and BI concerns.
+-   Use role-based service names (`serving-api`, `analytics-api`) so the codebase maps cleanly
+    onto the data architecture layers: ingestion + operational serving vs BI/OLAP querying.
+-   Align top-level folders with pipeline stages (streaming, batch, storage, analytics, UI)
+    to reflect data flow from raw events → lakehouse → serving + dashboards.
+-   Treat naming as part of the architecture: clear paths reduce onboarding time and keep OLTP,
+    batch, and BI responsibilities from bleeding into each other.
+-   Consolidate and prune regularly (e.g., keep notebooks under analytics, remove stale roots)
+    so the repository stays navigable as the platform grows.
 
 ## 🔮 Next Steps
 
