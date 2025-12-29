@@ -8,6 +8,7 @@ ENV HADOOP_VERSION=3.4.0
 ENV AWS_SDK_V1_VERSION=1.12.793
 ENV AWS_SDK_V2_VERSION=2.40.13
 ENV KAFKA_VERSION=4.0.1
+ENV KAFKA_CLIENT_VERSION=3.9.1
 ENV SCALA_VERSION=2.13
 
 # ===== Mongo (Spark Connector + Java Driver deps) =====
@@ -44,7 +45,12 @@ RUN wget -q -P /opt/spark/jars/ \
     wget -q -P /opt/spark/jars/ \
       https://repo1.maven.org/maven2/org/apache/spark/spark-token-provider-kafka-0-10_${SCALA_VERSION}/${KAFKA_VERSION}/spark-token-provider-kafka-0-10_${SCALA_VERSION}-${KAFKA_VERSION}.jar && \
     wget -q -P /opt/spark/jars/ \
-      https://repo1.maven.org/maven2/org/apache/kafka/kafka-clients/${KAFKA_VERSION}/kafka-clients-${KAFKA_VERSION}.jar
+      https://repo1.maven.org/maven2/org/apache/kafka/kafka-clients/${KAFKA_CLIENT_VERSION}/kafka-clients-${KAFKA_CLIENT_VERSION}.jar
+
+# ===== Kafka dependency (commons-pool2) =====
+RUN rm -f /opt/spark/jars/commons-pool2-2.11.1.jar && \
+    wget -q -P /opt/spark/jars/ \
+      https://repo1.maven.org/maven2/org/apache/commons/commons-pool2/2.12.0/commons-pool2-2.12.0.jar
 
 # ===== MongoDB Spark Connector + required Mongo Java driver jars =====
 RUN wget -q -P /opt/spark/jars/ \
