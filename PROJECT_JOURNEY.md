@@ -160,6 +160,20 @@ to pipeline logic.
     -   Root cause: Spark standalone does not support Python in cluster mode.
     -   Fix: switch to `spark.submit.deployMode=client` for Python jobs.
 
+-   **Review Streaming Enrichment (Kafka → MongoDB)**
+    -   Considerations: join high-volume review stream with large user/business dimensions and keep Mongo writes responsive.
+    -   What worked:
+        -   Pruned review columns before join to reduce shuffle payload.
+        -   Prepped dims by selecting only `user_id`/`business_id` + `name`.
+        -   Used non-broadcast joins after confirming `users` (~1.67GB) was too large.
+        -   Lowered `spark.sql.shuffle.partitions` for local runs to avoid 200-task shuffles.
+        -   Added checkpoint reset helper to re-run cleanly.
+    -   What did not:
+        -   Broadcasting large dims (users) caused heavy batches and timeouts.
+        -   Persisting dims with `count()` on local caused memory pressure/GC/OOM.
+        -   Joining on Mongo `_id` (ObjectId) yielded null `user_info`/`business_info`.
+    -   Local limits: single-machine Docker (limited RAM/cores), Jupyter driver inside container, Mongo writes on local disk, Spark UI not exposed by default, and occasional heartbeat timeouts under heavy batches.
+
 ### Airflow
 
 -   **Executor Crashes Due to JAR Shipping**
