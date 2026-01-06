@@ -174,6 +174,30 @@ to pipeline logic.
         -   Joining on Mongo `_id` (ObjectId) yielded null `user_info`/`business_info`.
     -   Local limits: single-machine Docker (limited RAM/cores), Jupyter driver inside container, Mongo writes on local disk, Spark UI not exposed by default, and occasional heartbeat timeouts under heavy batches.
 
+-   **Kafka Client Mismatch in Spark Streaming (2026-01-06)**
+    -   Symptom: `NoSuchMethodError` for `DescribeTopicsResult.all()` and `KafkaDataConsumer` init failures.
+    -   Root cause: Spark Kafka integration pulled incompatible Kafka client/commons-pool versions.
+    -   Fix (image): Pinned `kafka-clients` to 3.9.1 and `commons-pool2` to 2.12.0 in the Spark image.
+    -   Result: Streaming reviews job stabilized and Kafka offset discovery succeeded.
+
+-   **Streaming Startup Data Loss Window (2026-01-06)**
+    -   Symptom: First records produced during stream startup did not appear in MongoDB.
+    -   Root causes:
+        -   `startingOffsets=latest` only consumes records produced after the stream establishes initial offsets.
+        -   The Spark driver/executor/Kafka client initialization window can be long enough for early records to be skipped.
+        -   Checkpoints override `startingOffsets` once created.
+        -   Micro-batch commit behavior can look like lag until the first batch completes.
+    -   What we confirmed: Data produced before the consumer was active was never consumed; post-start records were ingested correctly.
+    -   Mitigations:
+        -   Dev/backfill: use `startingOffsets=earliest` with a fresh checkpoint.
+        -   Production-like: keep `startingOffsets=latest` and start producers after the stream is running.
+        -   Persist checkpoints on volumes (not `/tmp`) to avoid accidental resets.
+
+-   **Streaming Lag vs Producer Throughput (2026-01-06)**
+    -   Observation: MongoDB ingestion lagged behind Kafka producer output during steady-state streaming.
+    -   Explanation: Spark Structured Streaming only writes after each micro-batch completes, so ingest cadence depends on batch duration, join cost, and sink write time.
+    -   Implication: Lag is normal if batches are heavy; data will appear in MongoDB in bursts rather than strictly real-time.
+
 ### Airflow
 
 -   **Executor Crashes Due to JAR Shipping**

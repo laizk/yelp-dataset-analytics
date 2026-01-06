@@ -16,8 +16,12 @@ ENV HADOOP_VERSION=3.4.0
 ENV AWS_SDK_V1_VERSION=1.12.793
 ENV AWS_SDK_V2_VERSION=2.40.13
 
-# Kafka (match Spark)
+# Kafka (match Spark integration + client)
 ENV KAFKA_VERSION=4.0.1
+ENV KAFKA_CLIENT_VERSION=3.9.1
+
+# Kafka dependency used by the connector
+ENV COMMONS_POOL_VERSION=2.12.0
 
 # Mongo (match Jupyter)
 ENV MONGO_SPARK_VERSION=10.5.0
@@ -36,10 +40,7 @@ RUN apt-get update && \
 # ----------------------------
 # JARs: Delta, Kafka, S3A, AWS SDK, Mongo (+ driver deps)
 # ----------------------------
-RUN set -eux; \
-  \
-  # Delta
-  wget -q -P ${SPARK_HOME}/jars/ \
+RUN wget -q -P ${SPARK_HOME}/jars/ \
     https://repo1.maven.org/maven2/io/delta/delta-spark_${SCALA_VERSION}/${DELTA_VERSION}/delta-spark_${SCALA_VERSION}-${DELTA_VERSION}.jar; \
   wget -q -P ${SPARK_HOME}/jars/ \
     https://repo1.maven.org/maven2/io/delta/delta-storage/${DELTA_VERSION}/delta-storage-${DELTA_VERSION}.jar; \
@@ -50,10 +51,16 @@ RUN set -eux; \
   wget -q -P ${SPARK_HOME}/jars/ \
     https://repo1.maven.org/maven2/org/apache/spark/spark-token-provider-kafka-0-10_${SCALA_VERSION}/${KAFKA_VERSION}/spark-token-provider-kafka-0-10_${SCALA_VERSION}-${KAFKA_VERSION}.jar; \
   wget -q -P ${SPARK_HOME}/jars/ \
-    https://repo1.maven.org/maven2/org/apache/kafka/kafka-clients/${KAFKA_VERSION}/kafka-clients-${KAFKA_VERSION}.jar; \
-  \
-  # S3A (MinIO/S3)
-  wget -q -P ${SPARK_HOME}/jars/ \
+    https://repo1.maven.org/maven2/org/apache/kafka/kafka-clients/${KAFKA_CLIENT_VERSION}/kafka-clients-${KAFKA_CLIENT_VERSION}.jar;
+
+
+# ===== Kafka dependency (commons-pool2) =====
+RUN rm -f /opt/spark/jars/commons-pool2-2.11.1.jar && \
+    wget -q -P /opt/spark/jars/ \
+      https://repo1.maven.org/maven2/org/apache/commons/commons-pool2/2.12.0/commons-pool2-2.12.0.jar
+
+# S3A (MinIO/S3)
+RUN wget -q -P ${SPARK_HOME}/jars/ \
     https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/${HADOOP_VERSION}/hadoop-aws-${HADOOP_VERSION}.jar; \
   wget -q -P ${SPARK_HOME}/jars/ \
     https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/${AWS_SDK_V1_VERSION}/aws-java-sdk-bundle-${AWS_SDK_V1_VERSION}.jar; \
@@ -63,10 +70,6 @@ RUN set -eux; \
     https://repo1.maven.org/maven2/software/amazon/awssdk/bundle/${AWS_SDK_V2_VERSION}/bundle-${AWS_SDK_V2_VERSION}.jar; \
   wget -q -P ${SPARK_HOME}/jars/ \
     https://repo1.maven.org/maven2/software/amazon/awssdk/url-connection-client/${AWS_SDK_V2_VERSION}/url-connection-client-${AWS_SDK_V2_VERSION}.jar; \
-  \
-  # Optional helper jar you already had (safe to keep)
-  wget -q -P ${SPARK_HOME}/jars/ \
-    https://repo1.maven.org/maven2/org/apache/commons/commons-pool2/2.11.1/commons-pool2-2.11.1.jar; \
   \
   # Mongo Spark Connector
   wget -q -P ${SPARK_HOME}/jars/ \

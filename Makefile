@@ -25,6 +25,7 @@ up-all:
 down-all:
 	# Example: make down-all
 	@echo "Stopping ALL services..."
+	docker-compose -f $(MAIN_COMPOSE) --profile streaming stop streaming-reviews
 	docker-compose -f $(MAIN_COMPOSE) -f $(AIRFLOW_COMPOSE) down
 
 .PHONY: restart-all
@@ -86,6 +87,28 @@ logs:
 	@if [ -z "$(SERVICE)" ]; then echo $(SERVICE_MSG); exit 1; fi
 	@echo "Logs for service: $(SERVICE)"
 	docker-compose -f $(MAIN_COMPOSE) logs -f $(SERVICE)
+
+# -----------------------------------------
+# Streaming Jobs
+# -----------------------------------------
+
+.PHONY: streaming-reviews-up
+streaming-reviews-up:
+	# Example: make streaming-reviews-up
+	@echo "Starting streaming-reviews..."
+	docker-compose -f $(MAIN_COMPOSE) --profile streaming up -d --build streaming-reviews
+
+.PHONY: streaming-reviews-down
+streaming-reviews-down:
+	# Example: make streaming-reviews-down
+	@echo "Stopping streaming-reviews..."
+	docker-compose -f $(MAIN_COMPOSE) stop streaming-reviews
+
+.PHONY: streaming-reviews-logs
+streaming-reviews-logs:
+	# Example: make streaming-reviews-logs
+	@echo "Logs for streaming-reviews..."
+	docker-compose -f $(MAIN_COMPOSE) logs -f streaming-reviews
 
 # -----------------------------------------
 # Airflow Only
