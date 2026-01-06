@@ -197,6 +197,38 @@ services:
     restart: unless-stopped
     networks:
       - common
+
+  streaming-reviews-enriched:
+    image: yelp-spark
+    container_name: streaming-reviews-enriched
+    profiles:
+      - streaming
+    depends_on:
+      - spark-master
+      - kafka
+      - mongodb
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=broker:29092
+      - KAFKA_TOPIC_REVIEW=raw_data_review
+      - KAFKA_STARTING_OFFSETS=latest
+      - MONGO_DB=${MONGO_DB}
+      - MONGO_COLLECTION_REVIEWS_ENRICHED=reviews_enriched
+      - KAFKA_REVIEWS_ENRICHED_CHECKPOINT=/tmp/reviews_enriched_checkpoint
+      # Optional controls
+      # - KAFKA_MAX_OFFSETS_PER_TRIGGER=1000
+      # - KAFKA_TRIGGER_SECONDS=5
+    volumes:
+      - ./apps/compute/spark:/app
+      - ./apps/compute/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+    command:
+      [
+        "/opt/spark/bin/spark-submit",
+        "--master", "spark://spark-master:7077",
+        "/app/streaming/jobs/reviews_kafka_to_mongo_enriched.py"
+      ]
+    restart: unless-stopped
+    networks:
+      - common
     
   jupyter:
     build: ./apps/analytics/notebooks

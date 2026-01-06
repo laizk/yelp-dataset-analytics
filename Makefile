@@ -26,6 +26,7 @@ down-all:
 	# Example: make down-all
 	@echo "Stopping ALL services..."
 	docker-compose -f $(MAIN_COMPOSE) --profile streaming stop streaming-reviews
+	docker-compose -f $(MAIN_COMPOSE) --profile streaming stop streaming-reviews-enriched
 	docker-compose -f $(MAIN_COMPOSE) -f $(AIRFLOW_COMPOSE) down
 
 .PHONY: restart-all
@@ -109,6 +110,24 @@ streaming-reviews-logs:
 	# Example: make streaming-reviews-logs
 	@echo "Logs for streaming-reviews..."
 	docker-compose -f $(MAIN_COMPOSE) logs -f streaming-reviews
+
+.PHONY: streaming-reviews-enriched-up
+streaming-reviews-enriched-up:
+	# Example: make streaming-reviews-enriched-up
+	@echo "Starting streaming-reviews-enriched..."
+	docker-compose -f $(MAIN_COMPOSE) --profile streaming up -d --build streaming-reviews-enriched
+
+.PHONY: streaming-reviews-enriched-down
+streaming-reviews-enriched-down:
+	# Example: make streaming-reviews-enriched-down
+	@echo "Stopping streaming-reviews-enriched..."
+	docker-compose -f $(MAIN_COMPOSE) stop streaming-reviews-enriched
+
+.PHONY: streaming-reviews-enriched-logs
+streaming-reviews-enriched-logs:
+	# Example: make streaming-reviews-enriched-logs
+	@echo "Logs for streaming-reviews-enriched..."
+	docker-compose -f $(MAIN_COMPOSE) logs -f streaming-reviews-enriched
 
 # -----------------------------------------
 # Airflow Only

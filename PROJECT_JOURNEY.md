@@ -198,6 +198,31 @@ to pipeline logic.
     -   Explanation: Spark Structured Streaming only writes after each micro-batch completes, so ingest cadence depends on batch duration, join cost, and sink write time.
     -   Implication: Lag is normal if batches are heavy; data will appear in MongoDB in bursts rather than strictly real-time.
 
+-   **Streaming Progress Signals and Batch Timing (2026-01-06)**
+    -   Confirmation signals in logs:
+        -   `Stream started` / `Starting new streaming query` indicates the consumer loop is live.
+        -   `KafkaMicroBatchStream: Initial offsets: ...` shows the offsets the stream begins from (not necessarily 0).
+        -   `Committed offsets for batch ...` confirms micro-batches are executing and checkpointing.
+        -   Progress JSON includes `maxOffsetsBehindLatest` / `minOffsetsBehindLatest` to show backlog.
+    -   How to measure per-batch performance:
+        -   `batchDuration` (ms) tells total micro-batch runtime.
+        -   `numInputRows` tells how many Kafka records were processed in that batch.
+        -   `durationMs.addBatch` and `durationMs.queryPlanning` show where time is spent.
+    -   Observations:
+        -   Basic stream batches: `batchDuration` ≈ 1.7–2.6s with `numInputRows` ≈ 2–4.
+            -   Examples: 1.675s (2 rows), 2.025s (2 rows), 2.571s (2 rows).
+        -   Enriched stream batches: `batchDuration` ≈ 43–47s with small input (1–23 rows).
+            -   Examples: 46.805s (1 row), 43.932s (23 rows), 63.115s (87 rows).
+        -   First enriched batch can be very slow due to warm-up (planning/JIT/connector init).
+
+-   **Driver vs Master in Standalone Spark (2026-01-06)**
+    -   Clarification: In Spark standalone, the **master is not the driver**.
+    -   The driver is the process running `spark-submit` (Airflow or `streaming-reviews` container).
+    -   The master only manages resources and schedules executors on workers.
+    -   Stopping the driver container stops the streaming job, while the master/workers stay up.
+    -   This effectively behaves like **client deploy mode** in local standalone.
+    -   Takeaway: enrichment adds a fixed per-trigger cost, so small batches look slow; larger batches amortize overhead.
+
 ### Airflow
 
 -   **Executor Crashes Due to JAR Shipping**

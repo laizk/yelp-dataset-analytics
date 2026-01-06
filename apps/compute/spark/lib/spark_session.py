@@ -5,6 +5,7 @@ from lib.utils import _mongo_uri
 def create_spark_session(app_name: str = "My Spark App") -> SparkSession:
     # Optional: set master via env (leave empty to let spark-submit decide)
     spark_master = os.getenv("SPARK_MASTER_URL", "")  # e.g. spark://spark-master:7077
+    shuffle_partitions = os.getenv("SPARK_SHUFFLE_PARTITIONS", "")
 
     builder = (
         SparkSession.builder
@@ -24,6 +25,9 @@ def create_spark_session(app_name: str = "My Spark App") -> SparkSession:
         .config("spark.mongodb.read.connection.uri", _mongo_uri())
         .config("spark.mongodb.write.connection.uri", _mongo_uri())
     )
+
+    if shuffle_partitions:
+        builder = builder.config("spark.sql.shuffle.partitions", shuffle_partitions)
 
     if spark_master:
         builder = builder.config("spark.master", spark_master)
