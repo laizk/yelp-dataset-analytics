@@ -92,7 +92,7 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
     - ./data:/opt/airflow/data:ro
     - ./data:/data:ro
-    - ./apps/batch/spark:/app:ro
+    - ./apps/compute/spark:/app:ro
   networks:
     - common
   user: "${AIRFLOW_UID:-50000}:0"

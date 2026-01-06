@@ -1,6 +1,6 @@
 import os
 from pyspark.sql import SparkSession
-from utils import _mongo_uri
+from lib.utils import _mongo_uri
 
 def create_spark_session(app_name: str = "My Spark App") -> SparkSession:
     # Optional: set master via env (leave empty to let spark-submit decide)

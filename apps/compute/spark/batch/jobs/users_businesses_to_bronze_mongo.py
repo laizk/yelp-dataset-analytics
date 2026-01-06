@@ -1,8 +1,15 @@
 import os
+import sys
 
 from pyspark.sql import SparkSession
-from spark_session import create_spark_session
-from utils import _get_env, _mongo_uri, _load_jsonl, _write_bronze, _write_mongo
+
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.normpath(os.path.join(CURRENT_DIR, "..", ".."))
+if ROOT_DIR not in sys.path:
+    sys.path.append(ROOT_DIR)
+
+from lib.spark_session import create_spark_session
+from lib.utils import _get_env, _mongo_uri, _load_jsonl, _write_bronze, _write_mongo
 
 def main() -> None:
     # spark = (

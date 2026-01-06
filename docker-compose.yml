@@ -96,7 +96,7 @@ services:
       "
 
   spark-master:
-    build: ./apps/batch/spark
+    build: ./apps/compute/spark
     image: yelp-spark
     container_name: spark-master
     depends_on:
@@ -122,8 +122,8 @@ services:
       - MONGO_APP_DB=yelp
 
     volumes:
-      - ./apps/batch/spark:/app
-      - ./apps/batch/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf      
+      - ./apps/compute/spark:/app
+      - ./apps/compute/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf      
       - ./data:/data:ro
     networks:
       - common
@@ -135,7 +135,7 @@ services:
     command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"]
 
   spark-worker:
-    build: ./apps/batch/spark
+    build: ./apps/compute/spark
     image: yelp-spark
     container_name: spark-worker
     depends_on:
@@ -152,8 +152,8 @@ services:
       - MONGO_AUTH_DB=admin
       - MONGO_APP_DB=yelp
     volumes:
-      - ./apps/batch/spark:/app
-      - ./apps/batch/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+      - ./apps/compute/spark:/app
+      - ./apps/compute/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
       - ./data:/data:ro
     networks:
       - common

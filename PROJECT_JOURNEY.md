@@ -143,7 +143,7 @@ to pipeline logic.
     -   What we tried: Added Delta jars first (fixed `delta.DefaultSource`), but S3A still failed.
     -   Why it failed: Delta depends on S3A; without `hadoop-aws` the filesystem class is missing.
     -   Fix (code): Added `hadoop-aws` JARs into the Spark and Airflow images.
-        -   `apps/batch/spark/Dockerfile` adds `/opt/spark/jars/hadoop-aws-<ver>.jar`
+        -   `apps/compute/spark/Dockerfile` adds `/opt/spark/jars/hadoop-aws-<ver>.jar`
         -   `apps/batch/airflow/Dockerfile` mirrors the same JARs for the driver
 
 -   **AWS SDK Version Mismatch**
@@ -152,7 +152,7 @@ to pipeline logic.
     -   What we tried: Kept only `aws-java-sdk-bundle` (v1).
     -   Why it failed: Hadoop 3.4.x pulls v2 classes; v1 bundle cannot satisfy them.
     -   Fix (code): Added AWS SDK v2 bundle jars to both images and kept versions aligned.
-        -   `apps/batch/spark/Dockerfile` adds `software/amazon/awssdk/bundle`
+        -   `apps/compute/spark/Dockerfile` adds `software/amazon/awssdk/bundle`
         -   `apps/batch/airflow/Dockerfile` adds the same bundle for the driver
 
 -   **Spark Python Jobs in Cluster Deploy Mode**
@@ -295,7 +295,7 @@ to pipeline logic.
     -   What we tried: Added `mongo-spark-connector` JAR to Spark image.
     -   Why it initially failed: Connector alone wasn't enough; needed full driver stack.
     -   Fix (code): Added MongoDB Spark Connector + driver JARs to both Spark and Airflow images.
-        -   `apps/batch/spark/Dockerfile` and `apps/batch/airflow/Dockerfile`
+        -   `apps/compute/spark/Dockerfile` and `apps/batch/airflow/Dockerfile`
 
 -   **MongoDB BSON Dependency Missing**
     -   Symptom: `java.lang.NoClassDefFoundError: org/bson/BsonValue` when executing MongoDB operations.
@@ -306,7 +306,7 @@ to pipeline logic.
         -   `mongodb-driver-sync-5.6.2.jar`
         -   `mongodb-driver-core-5.6.2.jar`
         -   `bson-5.6.2.jar`
-        -   Applied to both `apps/batch/spark/Dockerfile` and `apps/batch/airflow/Dockerfile`
+        -   Applied to both `apps/compute/spark/Dockerfile` and `apps/batch/airflow/Dockerfile`
 
 -   **MongoDB Connection URI Configuration**
     -   Symptom: Connection failures or authentication errors when connecting to MongoDB from Spark.
@@ -314,8 +314,8 @@ to pipeline logic.
     -   What we tried: Set only `spark.mongodb.write.connection.uri`.
     -   Why it failed: Read operations also need explicit configuration; Spark doesn't infer from write config.
     -   Fix (code): Created centralized MongoDB URI builder and configured both read/write URIs.
-        -   `apps/batch/spark/jobs/utils.py` - `_mongo_uri()` function
-        -   `apps/batch/spark/jobs/spark_session.py` - sets both read and write URIs
+        -   `apps/compute/spark/jobs/utils.py` - `_mongo_uri()` function
+        -   `apps/compute/spark/jobs/spark_session.py` - sets both read and write URIs
         -   Format: `mongodb://{user}:{password}@{host}:{port}/{auth_db}?authSource={auth_db}`
 
 -   **Environment Variable Propagation for MongoDB**

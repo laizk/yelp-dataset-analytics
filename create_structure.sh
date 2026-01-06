@@ -26,7 +26,7 @@ mkdir -p apps/ai/retriever
 mkdir -p apps/streaming/kafka
 mkdir -p apps/streaming/spark_streaming
 
-mkdir -p apps/batch/spark
+mkdir -p apps/compute/spark
 mkdir -p apps/batch/airflow
 mkdir -p apps/batch/dbt
 

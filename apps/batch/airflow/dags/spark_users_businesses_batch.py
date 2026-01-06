@@ -49,7 +49,7 @@ def spark_users_businesses_bronze_mongo():
     SparkSubmitOperator(
         task_id="submit_users_businesses_job",
         conn_id="spark_standalone_client",
-        application="/app/jobs/users_businesses_to_bronze_mongo.py",
+        application="/app/batch/jobs/users_businesses_to_bronze_mongo.py",
         name="users-businesses-bronze-mongo",
         verbose=True,
         conf=_spark_conf(),
