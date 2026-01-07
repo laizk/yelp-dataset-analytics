@@ -222,6 +222,7 @@ to pipeline logic.
     -   Stopping the driver container stops the streaming job, while the master/workers stay up.
     -   This effectively behaves like **client deploy mode** in local standalone.
     -   Takeaway: enrichment adds a fixed per-trigger cost, so small batches look slow; larger batches amortize overhead.
+    -   Observation: After Kafka offsets were anchored, Spark ran an initial setup batch with `numInputRows=0`. The first data batch arrived in the next trigger cycle once new messages were produced.
 
 ### Airflow
 

@@ -5,6 +5,9 @@ def write_to_mongo(batch_df, batch_id: int, collection: str) -> None:
     if batch_df.rdd.isEmpty():
         return
 
+    # Optional: reduce write parallelism for smaller local clusters.
+    # batch_df = batch_df.coalesce(8)
+
     (batch_df.write.format("mongodb")
         .mode("append")
         .option("database", config.mongo_database())

@@ -67,6 +67,9 @@ def write_enriched_to_mongo(batch_df, batch_id: int) -> None:
     if batch_df.rdd.isEmpty():
         return
 
+    # Optional: reduce write parallelism for smaller local clusters.
+    # batch_df = batch_df.coalesce(8)
+
     collection = config.get_env("MONGO_COLLECTION_REVIEWS_ENRICHED", "reviews_enriched")
     (batch_df.write.format("mongodb")
         .mode("append")
