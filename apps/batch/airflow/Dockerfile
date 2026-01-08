@@ -38,7 +38,7 @@ ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 # Install Spark distribution (spark-submit used by SparkSubmitOperator)
 # ----------------------------
 RUN curl -L -o /tmp/spark.tgz \
-    https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-${HADOOP_PROFILE}.tgz \
+    https://dlcdn.apache.org/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-${HADOOP_PROFILE}.tgz \
   && tar -xzf /tmp/spark.tgz -C /opt \
   && mv /opt/spark-${SPARK_VERSION}-${HADOOP_PROFILE} ${SPARK_HOME} \
   && rm /tmp/spark.tgz

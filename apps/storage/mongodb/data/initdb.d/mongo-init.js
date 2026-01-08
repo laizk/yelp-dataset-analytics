@@ -70,3 +70,20 @@ db.test_collection.insertMany([
     ]
   }
 ]);
+
+const yelpDbName = process.env.MONGO_DB || "yelp";
+const yelpDb = db.getSiblingDB(yelpDbName);
+
+const yelpCollections = [
+  "users",
+  "businesses",
+  "reviews",
+  "reviews_enriched",
+];
+
+const existingCollections = yelpDb.getCollectionNames();
+yelpCollections.forEach((name) => {
+  if (!existingCollections.includes(name)) {
+    yelpDb.createCollection(name);
+  }
+});

@@ -129,6 +129,24 @@ streaming-reviews-enriched-logs:
 	@echo "Logs for streaming-reviews-enriched..."
 	docker-compose -f $(MAIN_COMPOSE) logs -f streaming-reviews-enriched
 
+.PHONY: streaming-bronze-up
+streaming-bronze-up:
+	# Example: make streaming-bronze-up
+	@echo "Starting streaming-bronze..."
+	docker-compose -f $(MAIN_COMPOSE) --profile streaming up -d --build streaming-bronze
+
+.PHONY: streaming-bronze-down
+streaming-bronze-down:
+	# Example: make streaming-bronze-down
+	@echo "Stopping streaming-bronze..."
+	docker-compose -f $(MAIN_COMPOSE) stop streaming-bronze
+
+.PHONY: streaming-bronze-logs
+streaming-bronze-logs:
+	# Example: make streaming-bronze-logs
+	@echo "Logs for streaming-bronze..."
+	docker-compose -f $(MAIN_COMPOSE) logs -f streaming-bronze
+
 # -----------------------------------------
 # Airflow Only
 # -----------------------------------------

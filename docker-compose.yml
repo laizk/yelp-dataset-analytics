@@ -104,6 +104,7 @@ services:
       - minio
       - createbuckets
     environment:
+      - SPARK_DAEMON_MEMORY=512m
       - DATA_LAKE_ENDPOINT=${DATA_LAKE_ENDPOINT}
       - DATA_LAKE_ACCESS_KEY_ID=${DATA_LAKE_ACCESS_KEY_ID}
       - DATA_LAKE_SECRET_ACCESS_KEY=${DATA_LAKE_SECRET_ACCESS_KEY}
@@ -134,15 +135,15 @@ services:
       - "6066:6066"
     command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"]
 
-  spark-worker:
+  spark-worker-1:
     build: ./apps/compute/spark
     image: yelp-spark
-    container_name: spark-worker
+    container_name: spark-worker-1
     depends_on:
       - spark-master
     environment:
-      - SPARK_WORKER_MEMORY=4G
-      - SPARK_WORKER_CORES=2       
+      - SPARK_WORKER_MEMORY=2G
+      - SPARK_WORKER_CORES=1
       - SPARK_WORKER_WEBUI_PORT=8086
       # MongoDB
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
@@ -165,6 +166,38 @@ services:
         "org.apache.spark.deploy.worker.Worker",
         "spark://spark-master:7077"
       ]
+
+  # spark-worker-2:
+  #   build: ./apps/compute/spark
+  #   image: yelp-spark
+  #   container_name: spark-worker-2
+  #   depends_on:
+  #     - spark-master
+  #   environment:
+  #     - SPARK_WORKER_MEMORY=2G
+  #     - SPARK_WORKER_CORES=1
+  #     - SPARK_WORKER_WEBUI_PORT=8087
+  #     # MongoDB
+  #     - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+  #     - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+  #     - MONGO_HOST=mongodb
+  #     - MONGO_PORT=27017
+  #     - MONGO_AUTH_DB=admin
+  #     - MONGO_APP_DB=yelp
+  #   volumes:
+  #     - ./apps/compute/spark:/app
+  #     - ./apps/compute/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+  #     - ./data:/data:ro
+  #   networks:
+  #     - common
+  #   ports:
+  #     - "8087:8087"
+  #   command:
+      # [
+      #   "/opt/spark/bin/spark-class",
+      #   "org.apache.spark.deploy.worker.Worker",
+      #   "spark://spark-master:7077"
+      # ]
 
   streaming-reviews:
     image: yelp-spark
@@ -225,6 +258,41 @@ services:
         "/opt/spark/bin/spark-submit",
         "--master", "spark://spark-master:7077",
         "/app/streaming/jobs/reviews_kafka_to_mongo_enriched.py"
+      ]
+    restart: unless-stopped
+    networks:
+      - common
+
+  streaming-bronze:
+    image: yelp-spark
+    container_name: streaming-bronze
+    profiles:
+      - streaming
+    depends_on:
+      - spark-master
+      - kafka
+      - minio
+    environment:
+      - DATA_LAKE_ENDPOINT=${DATA_LAKE_ENDPOINT}
+      - DATA_LAKE_ACCESS_KEY_ID=${DATA_LAKE_ACCESS_KEY_ID}
+      - DATA_LAKE_SECRET_ACCESS_KEY=${DATA_LAKE_SECRET_ACCESS_KEY}
+      - DATA_LAKE_REGION=us-east-1
+      - KAFKA_BOOTSTRAP_SERVERS=broker:29092
+      - KAFKA_STARTING_OFFSETS=latest
+      - KAFKA_BRONZE_TOPIC_PATTERN=raw_data_.*
+      - BRONZE_STREAM_PATH=s3a://bronze/kafka
+      - KAFKA_BRONZE_CHECKPOINT=/tmp/bronze_kafka_checkpoint
+      # Optional controls
+      # - KAFKA_MAX_OFFSETS_PER_TRIGGER=1000
+      # - KAFKA_TRIGGER_SECONDS=5
+    volumes:
+      - ./apps/compute/spark:/app
+      - ./apps/compute/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+    command:
+      [
+        "/opt/spark/bin/spark-submit",
+        "--master", "spark://spark-master:7077",
+        "/app/streaming/jobs/kafka_to_bronze.py"
       ]
     restart: unless-stopped
     networks:
