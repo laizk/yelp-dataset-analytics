@@ -25,8 +25,9 @@ up-all:
 down-all:
 	# Example: make down-all
 	@echo "Stopping ALL services..."
-	docker-compose -f $(MAIN_COMPOSE) --profile streaming stop streaming-reviews
 	docker-compose -f $(MAIN_COMPOSE) --profile streaming stop streaming-reviews-enriched
+	docker-compose -f $(MAIN_COMPOSE) --profile streaming stop streaming-bronze
+	docker-compose -f $(MAIN_COMPOSE) --profile streaming stop streaming-mongo-multiplex
 	docker-compose -f $(MAIN_COMPOSE) -f $(AIRFLOW_COMPOSE) down
 
 .PHONY: restart-all
@@ -93,24 +94,6 @@ logs:
 # Streaming Jobs
 # -----------------------------------------
 
-.PHONY: streaming-reviews-up
-streaming-reviews-up:
-	# Example: make streaming-reviews-up
-	@echo "Starting streaming-reviews..."
-	docker-compose -f $(MAIN_COMPOSE) --profile streaming up -d --build streaming-reviews
-
-.PHONY: streaming-reviews-down
-streaming-reviews-down:
-	# Example: make streaming-reviews-down
-	@echo "Stopping streaming-reviews..."
-	docker-compose -f $(MAIN_COMPOSE) stop streaming-reviews
-
-.PHONY: streaming-reviews-logs
-streaming-reviews-logs:
-	# Example: make streaming-reviews-logs
-	@echo "Logs for streaming-reviews..."
-	docker-compose -f $(MAIN_COMPOSE) logs -f streaming-reviews
-
 .PHONY: streaming-reviews-enriched-up
 streaming-reviews-enriched-up:
 	# Example: make streaming-reviews-enriched-up
@@ -146,6 +129,24 @@ streaming-bronze-logs:
 	# Example: make streaming-bronze-logs
 	@echo "Logs for streaming-bronze..."
 	docker-compose -f $(MAIN_COMPOSE) logs -f streaming-bronze
+
+.PHONY: streaming-mongo-multiplex-up
+streaming-mongo-multiplex-up:
+	# Example: make streaming-mongo-multiplex-up
+	@echo "Starting streaming-mongo-multiplex..."
+	docker-compose -f $(MAIN_COMPOSE) --profile streaming up -d --build streaming-mongo-multiplex
+
+.PHONY: streaming-mongo-multiplex-down
+streaming-mongo-multiplex-down:
+	# Example: make streaming-mongo-multiplex-down
+	@echo "Stopping streaming-mongo-multiplex..."
+	docker-compose -f $(MAIN_COMPOSE) stop streaming-mongo-multiplex
+
+.PHONY: streaming-mongo-multiplex-logs
+streaming-mongo-multiplex-logs:
+	# Example: make streaming-mongo-multiplex-logs
+	@echo "Logs for streaming-mongo-multiplex..."
+	docker-compose -f $(MAIN_COMPOSE) logs -f streaming-mongo-multiplex
 
 # -----------------------------------------
 # Airflow Only

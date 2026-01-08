@@ -221,6 +221,11 @@ to pipeline logic.
     -   The master only manages resources and schedules executors on workers.
     -   Stopping the driver container stops the streaming job, while the master/workers stay up.
     -   This effectively behaves like **client deploy mode** in local standalone.
+
+-   **Kafka-First Serving + Mongo Multiplex (2026-01-08)**
+    -   Shifted serving API writes to Kafka-first ingestion.
+    -   Replaced per-entity Mongo streaming jobs with a single multiplex job that routes by `record_type`.
+    -   Kept `streaming-reviews-enriched` separate for enriched serving docs.
     -   Takeaway: enrichment adds a fixed per-trigger cost, so small batches look slow; larger batches amortize overhead.
     -   Observation: After Kafka offsets were anchored, Spark ran an initial setup batch with `numInputRows=0`. The first data batch arrived in the next trigger cycle once new messages were produced.
 

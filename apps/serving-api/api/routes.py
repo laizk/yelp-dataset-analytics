@@ -7,9 +7,9 @@ from services.kafka_producer_services import (
     publish_user_to_kafka,
     publish_review_to_kafka,
 )
-from services.mongo_business_services import list_businesses, upsert_business
-from services.mongo_user_services import list_users, upsert_user
-from services.mongo_review_services import list_reviews, upsert_review
+from services.mongo_business_services import list_businesses
+from services.mongo_user_services import list_users
+from services.mongo_review_services import list_reviews
 
 kafka_router = APIRouter(prefix="/kafka", tags=["kafka"])
 business_router = APIRouter(prefix="/businesses", tags=["businesses"])
@@ -151,12 +151,12 @@ async def publish_review(payload: ReviewSchema):
 @business_router.post("")
 async def register_business(payload: BusinessSchema):
     """
-    Accepts a BusinessSchema JSON body and upserts it into MongoDB.
+    Accepts a BusinessSchema JSON body and publishes it to Kafka (Kafka-first ingestion).
     """
     try:
-        result = upsert_business(payload)
+        result = publish_business_to_kafka(payload)
         return {
-            "message": "Business stored successfully",
+            "message": "Business published successfully",
             "result": result,
         }
     except Exception as e:
@@ -174,12 +174,12 @@ async def get_businesses(limit: int = 20):
 @user_router.post("")
 async def register_user(payload: UserSchema):
     """
-    Accepts a UserSchema JSON body and upserts it into MongoDB.
+    Accepts a UserSchema JSON body and publishes it to Kafka (Kafka-first ingestion).
     """
     try:
-        result = upsert_user(payload)
+        result = publish_user_to_kafka(payload)
         return {
-            "message": "User stored successfully",
+            "message": "User published successfully",
             "result": result,
         }
     except Exception as e:
@@ -197,12 +197,12 @@ async def get_users(limit: int = 20):
 @review_router.post("")
 async def register_review(payload: ReviewSchema):
     """
-    Accepts a ReviewSchema JSON body and upserts it into MongoDB.
+    Accepts a ReviewSchema JSON body and publishes it to Kafka (Kafka-first ingestion).
     """
     try:
-        result = upsert_review(payload)
+        result = publish_review_to_kafka(payload)
         return {
-            "message": "Review stored successfully",
+            "message": "Review published successfully",
             "result": result,
         }
     except Exception as e:
