@@ -25,8 +25,90 @@ services:
     networks:
       - common
 
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect:7.7.7
+    container_name: kafka-connect
+    depends_on:
+      - kafka
+      - minio
+    ports:
+      - "8083:8083"
+    networks:
+      - common
+    environment:
+      # ---- Connect worker ----
+      CONNECT_BOOTSTRAP_SERVERS: "broker:29092"
+      CONNECT_REST_PORT: 8083
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
 
-  # Create kafka topics on startup
+      CONNECT_GROUP_ID: "connect-cluster"
+      CONNECT_CONFIG_STORAGE_TOPIC: "_connect-configs"
+      CONNECT_OFFSET_STORAGE_TOPIC: "_connect-offsets"
+      CONNECT_STATUS_STORAGE_TOPIC: "_connect-status"
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+
+      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
+      CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
+      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
+
+      # ✅ Fix B: AWS SDK v2 default credentials chain variables
+      AWS_ACCESS_KEY_ID: ${DATA_LAKE_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${DATA_LAKE_SECRET_ACCESS_KEY}
+      AWS_REGION: "us-east-1"
+      AWS_DEFAULT_REGION: "us-east-1"
+
+    command:
+      - bash
+      - -lc
+      - |
+        set -euo pipefail
+        echo "Installing S3 connector..."
+        confluent-hub install --no-prompt confluentinc/kafka-connect-s3:11.0.8
+
+        echo "Launching Kafka Connect worker"
+        /etc/confluent/docker/run &
+
+        echo "Waiting for Kafka Connect to start listening on localhost ⏳"
+        while : ; do
+          curl_status=$$(curl -sS -o /dev/null -w "%{http_code}" http://localhost:8083/connectors || echo 000)
+          echo "$$(date) Kafka Connect listener HTTP state: $$curl_status (waiting for 200)"
+          if [ "$$curl_status" = "200" ] ; then
+            break
+          fi
+          sleep 5
+        done
+
+        echo -e "\n--\n+> Creating S3 Sink source"
+        curl -sS -X PUT -H "Content-Type: application/json" \
+          http://localhost:8083/connectors/bronze-s3-sink/config \
+          -d '{
+            "connector.class": "io.confluent.connect.s3.S3SinkConnector",
+            "tasks.max": "1",
+            "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+            "value.converter": "org.apache.kafka.connect.storage.StringConverter",
+            "topics.regex": "raw_data_.*",
+            "format.class": "io.confluent.connect.s3.format.json.JsonFormat",
+            "flush.size": "10",
+            "schema.compatibility": "NONE",
+            "s3.bucket.name": "bronze",
+            "topics.dir": "kafka-connect",
+            "s3.region": "us-east-1",
+            "storage.class": "io.confluent.connect.s3.storage.S3Storage",
+            "store.url": "http://minio:9000/",
+            "partitioner.class": "io.confluent.connect.storage.partitioner.DefaultPartitioner"
+          }'
+
+        sleep infinity
+
+
+
+ # Create kafka topics on startup
   kafka-init:
     image: apache/kafka:latest
     depends_on:
@@ -54,7 +136,7 @@ services:
     image: provectuslabs/kafka-ui:latest
     container_name: streaming-kafka-ui
     ports:
-      - "8083:8080"
+      - "8084:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: "local"
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "broker:29092"

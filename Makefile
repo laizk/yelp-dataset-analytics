@@ -149,6 +149,18 @@ streaming-mongo-multiplex-logs:
 	docker-compose -f $(MAIN_COMPOSE) logs -f streaming-mongo-multiplex
 
 # -----------------------------------------
+# Kafka Connect
+# -----------------------------------------
+
+.PHONY: kafka-connect-restart
+kafka-connect-restart:
+	# Example: make kafka-connect-restart
+	@echo "Restarting kafka-connect and kafka-connect-init..."
+	docker-compose -f $(MAIN_COMPOSE) stop kafka-connect kafka-connect-init
+	docker-compose -f $(MAIN_COMPOSE) rm -f kafka-connect kafka-connect-init
+	docker-compose -f $(MAIN_COMPOSE) up -d --build kafka-connect kafka-connect-init
+
+# -----------------------------------------
 # Airflow Only
 # -----------------------------------------
 

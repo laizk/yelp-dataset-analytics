@@ -226,8 +226,54 @@ to pipeline logic.
     -   Shifted serving API writes to Kafka-first ingestion.
     -   Replaced per-entity Mongo streaming jobs with a single multiplex job that routes by `record_type`.
     -   Kept `streaming-reviews-enriched` separate for enriched serving docs.
+
+-   **Bronze via Kafka Connect (2026-01-08)**
+    -   Main Bronze path uses Kafka Connect S3 sink (per-topic JSON in MinIO).
+    -   `streaming-bronze` Spark job kept for testing/validation.
+    -   Silver remains per-entity with enrichment rather than unified Bronze.
     -   Takeaway: enrichment adds a fixed per-trigger cost, so small batches look slow; larger batches amortize overhead.
     -   Observation: After Kafka offsets were anchored, Spark ran an initial setup batch with `numInputRows=0`. The first data batch arrived in the next trigger cycle once new messages were produced.
+    -   Current working Kafka Connect settings (docker-compose):
+        -   Image: `confluentinc/cp-kafka-connect:7.7.7`, REST on `8083`.
+        -   S3 sink installed via `confluent-hub install ...:11.0.8`.
+        -   Connector config in `apps/streaming/kafka-connect/bronze-s3-sink.json`:
+            -   `topics.regex=raw_data_.*`
+            -   `format.class=io.confluent.connect.s3.format.json.JsonFormat`
+            -   `path.format=kafka-connect/{topic}`
+            -   `flush.size=${KAFKA_CONNECT_BRONZE_FLUSH_SIZE}`
+            -   MinIO endpoint `http://minio:9000`, bucket `bronze`, path-style access enabled.
+        -   `kafka-connect-init` posts/updates the connector after REST is ready.
+    -   Why Kafka Connect initially failed:
+        -   The connector JSON contained `${...}` placeholders, but posting it directly bypassed `envsubst`.
+        -   Kafka Connect does not expand env vars inside posted JSON, so `flush.size` and credentials were sent as literal strings.
+        -   The S3 task then fell back to the AWS SDK v2 default credential chain and could not find `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`, causing task failures.
+    -   What solved it:
+        -   Validate Connect is up, then create the connector with resolved values (either `envsubst` in the container or a POST with already-expanded JSON).
+        -   Ensure AWS credentials are available to the connector (either explicit config values or `AWS_*` env vars).
+    -   Docker Compose snippet (auto-provision connector on startup):
+        ```yaml
+        kafka-connect:
+          command:
+            - bash
+            - -lc
+            - |
+              /etc/confluent/docker/run &
+              until curl -s http://localhost:${KAFKA_CONNECT_REST_PORT}/connectors > /dev/null; do sleep 2; done
+              envsubst < /etc/kafka-connect/bronze-s3-sink.json | \
+                curl -s -X PUT -H 'Content-Type: application/json' \
+                --data @- http://localhost:${KAFKA_CONNECT_REST_PORT}/connectors/bronze-s3-sink/config
+              wait
+        ```
+    -   Fix B (working): explicitly validate Connect is up, then create and verify the S3 sink connector.
+        -   Health checks:
+            -   `curl -sS http://localhost:8083/ | head`
+            -   `curl -sS http://localhost:8083/connector-plugins | head`
+        -   Create connector:
+            -   `curl -sS -w "\nHTTP %{http_code}\n" -X POST -H "Content-Type: application/json" --data @./apps/streaming/kafka-connect/bronze-s3-sink.json http://localhost:8083/connectors`
+        -   Verify:
+            -   `curl -sS http://localhost:8083/connectors | jq`
+            -   `curl -sS http://localhost:8083/connectors/bronze-s3-sink/status | jq`
+    -   Notes: Connector creation returned HTTP 201, but initial task failure showed missing AWS credentials. Root cause was the AWS SDK v2 credential chain not seeing `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`.
 
 ### Airflow
 
